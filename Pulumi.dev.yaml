@@ -1,0 +1,14 @@
+config:
+  aws:region: us-east-1
+  gradiant:appName: gradiant
+  gradiant:subdomain: gradient
+  gradiant:platformStack: cwnelson/portfolio-platform/dev
+  gradiant:cpu: "256"
+  gradiant:memory: "512"
+  gradiant:desiredCount: "1"
+  gradiant:containerPort: "3000"
+  gradiant:useFargateSpot: "true"
+  gradiant:enableScheduledScaling: "true"
+  gradiant:scaleUpHour: "6"
+  gradiant:scaleDownHour: "22"
+  gradiant:scheduleTimezone: "America/Denver"
