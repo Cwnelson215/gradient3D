@@ -36,7 +36,7 @@ const container: React.CSSProperties = {
   right: 8,
   display: "flex",
   gap: 4,
-  zIndex: 100,
+  zIndex: 1100,
   pointerEvents: "auto",
 };
 

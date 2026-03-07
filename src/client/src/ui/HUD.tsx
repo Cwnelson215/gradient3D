@@ -10,6 +10,7 @@ export function HUD() {
   const viewMode = useLandscapeStore((s) => s.viewMode);
   const showPlan = viewMode === "plan" || viewMode === "split";
   const show3D = viewMode === "view3d" || viewMode === "split";
+  const isSplit = viewMode === "split";
 
   return (
     <div
@@ -20,14 +21,33 @@ export function HUD() {
         width: "100%",
         height: "100%",
         pointerEvents: "none",
+        display: isSplit ? "flex" : undefined,
       }}
     >
       <ViewModeToggle />
-      {showPlan && <PlanToolbar />}
-      {showPlan && <ObjectProperties />}
-      {show3D && <Toolbar />}
-      {show3D && <ModeSelector />}
-      {show3D && <ParameterPanel />}
+      {isSplit ? (
+        <>
+          {/* Plan half */}
+          <div style={{ position: "relative", width: "50%", height: "100%", pointerEvents: "none" }}>
+            <PlanToolbar />
+            <ObjectProperties />
+          </div>
+          {/* 3D half */}
+          <div style={{ position: "relative", width: "50%", height: "100%", pointerEvents: "none" }}>
+            <Toolbar />
+            <ModeSelector />
+            <ParameterPanel />
+          </div>
+        </>
+      ) : (
+        <>
+          {showPlan && <PlanToolbar />}
+          {showPlan && <ObjectProperties />}
+          {show3D && <Toolbar />}
+          {show3D && <ModeSelector />}
+          {show3D && <ParameterPanel />}
+        </>
+      )}
     </div>
   );
 }

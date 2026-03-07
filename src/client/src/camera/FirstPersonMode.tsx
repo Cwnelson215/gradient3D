@@ -14,7 +14,13 @@ export function FirstPersonMode() {
   const controlsRef = useRef<any>(null);
 
   useEffect(() => {
-    camera.position.set(0, 20, 0);
+    // Start at the edge of the terrain, looking inward, at proper ground height
+    const { heightmap, params } = useTerrainStore.getState();
+    const startX = params.worldWidth * 0.4;
+    const startZ = params.worldHeight * 0.4;
+    const h = sampleHeight(heightmap, startX, startZ, params);
+    camera.position.set(startX, h + EYE_HEIGHT, startZ);
+    camera.lookAt(0, h + EYE_HEIGHT, 0);
 
     const onKeyDown = (e: KeyboardEvent) => keys.current.add(e.code);
     const onKeyUp = (e: KeyboardEvent) => keys.current.delete(e.code);
