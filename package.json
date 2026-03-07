@@ -1,7 +1,7 @@
 {
-  "name": "gradiant-infra",
+  "name": "gradient-infra",
   "version": "1.0.0",
-  "description": "Infrastructure for gradiant",
+  "description": "Infrastructure for gradient",
   "main": "index.ts",
   "scripts": {
     "build": "tsc",

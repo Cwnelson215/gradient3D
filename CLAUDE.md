@@ -26,7 +26,7 @@ npm run destroy       # Tear down infra
 **App contract:** The container must (1) listen on the configured port (default 3000) and (2) expose `GET /health` returning HTTP 200.
 
 **Infrastructure (`index.ts`):** Defines app-specific AWS resources:
-- ECR repository (`portfolio/gradiant`) with lifecycle policy (keep last 10 images)
+- ECR repository (`portfolio/gradient`) with lifecycle policy (keep last 10 images)
 - Security group allowing traffic from the shared ALB
 - ALB target group + host-based listener rule (`gradient.cwnel.com`)
 - ECS Fargate task definition + service (Fargate Spot only)
@@ -47,6 +47,6 @@ All shared resources (VPC, ALB, ECS cluster, Route53, ACM, CloudWatch log group)
 
 - **Naming:** Resources prefixed with `appName`. All tagged with Project, App, ManagedBy.
 - **Config:** Environment-specific values in `Pulumi.{stack}.yaml`. Secrets via `pulumi config set --secret`.
-- **Logs:** CloudWatch at `/ecs/portfolio-dev/gradiant`, 14-day retention.
+- **Logs:** CloudWatch at `/ecs/portfolio-dev/gradient`, 14-day retention.
 - **Platform stack reference:** `cwnelson/portfolio-platform/dev`
 - **Health check:** `GET /health` must return HTTP 200 — this is used by both the ALB target group and the ECS container health check.

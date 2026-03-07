@@ -1,0 +1,9 @@
+node_modules
+src/node_modules
+src/client/node_modules
+.github
+Pulumi.yaml
+Pulumi.*.yaml
+index.ts
+tsconfig.json
+*.md

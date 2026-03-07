@@ -3,10 +3,10 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
-RUN npm ci
+COPY src/package.json src/package-lock.json* ./
+RUN npm install
 
-COPY . .
+COPY src/ .
 RUN npm run build
 
 # ---- Production stage ----
@@ -16,12 +16,11 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Create non-root user
 RUN addgroup --system --gid 1001 appgroup && \
     adduser --system --uid 1001 appuser
 
-COPY --from=builder /app/package.json /app/package-lock.json ./
-RUN npm ci --omit=dev
+COPY --from=builder /app/package.json ./
+RUN npm install --omit=dev
 
 COPY --from=builder /app/dist ./dist
 
@@ -29,4 +28,4 @@ USER appuser
 
 EXPOSE 3000
 
-CMD ["node", "dist/index.js"]
+CMD ["node", "dist/server/index.js"]
