@@ -7,6 +7,7 @@ import type {
   PropertyConfig,
   ViewMode,
   PlanTool,
+  CameraMode,
   ObjectType,
   ObjectStyle,
 } from "../types/landscape";
@@ -16,11 +17,13 @@ interface LandscapeStore {
   viewMode: ViewMode;
   activeTool: PlanTool;
   selectedObjectId: string | null;
+  cameraMode: CameraMode;
 
   initProject: (config: PropertyConfig) => void;
   setViewMode: (mode: ViewMode) => void;
   setActiveTool: (tool: PlanTool) => void;
   selectObject: (id: string | null) => void;
+  setCameraMode: (mode: CameraMode) => void;
 
   addObject: (
     type: ObjectType,
@@ -53,6 +56,7 @@ export const useLandscapeStore = create<LandscapeStore>((set, get) => ({
   viewMode: "plan",
   activeTool: "select",
   selectedObjectId: null,
+  cameraMode: "orbit",
 
   initProject: (config) => {
     set({
@@ -69,6 +73,7 @@ export const useLandscapeStore = create<LandscapeStore>((set, get) => ({
   setViewMode: (mode) => set({ viewMode: mode }),
   setActiveTool: (tool) => set({ activeTool: tool }),
   selectObject: (id) => set({ selectedObjectId: id }),
+  setCameraMode: (mode) => set({ cameraMode: mode }),
 
   addObject: (type, name, points, style, properties) => {
     const id = uuidv4();

@@ -1,7 +1,5 @@
 import { useLandscapeStore } from "../store/landscapeStore";
-import { Toolbar } from "./Toolbar";
 import { ModeSelector } from "./ModeSelector";
-import { ParameterPanel } from "./ParameterPanel";
 import { ViewModeToggle } from "./ViewModeToggle";
 import { PlanToolbar } from "./PlanToolbar";
 import { ObjectProperties } from "./ObjectProperties";
@@ -34,18 +32,14 @@ export function HUD() {
           </div>
           {/* 3D half */}
           <div style={{ position: "relative", width: "50%", height: "100%", pointerEvents: "none" }}>
-            <Toolbar />
             <ModeSelector />
-            <ParameterPanel />
           </div>
         </>
       ) : (
         <>
           {showPlan && <PlanToolbar />}
           {showPlan && <ObjectProperties />}
-          {show3D && <Toolbar />}
           {show3D && <ModeSelector />}
-          {show3D && <ParameterPanel />}
         </>
       )}
     </div>

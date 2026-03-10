@@ -15,5 +15,5 @@ app.get("*", (_req, res) => {
     res.sendFile(path_1.default.join(__dirname, "../client/index.html"));
 });
 app.listen(port, () => {
-    console.log(`gradiant listening on port ${port}`);
+    console.log(`gradient listening on port ${port}`);
 });

@@ -13,9 +13,10 @@ export function House3D({ obj }: Props) {
     if (obj.points.length < 3) return null;
 
     const shape = new THREE.Shape();
-    shape.moveTo(obj.points[0][0], obj.points[0][1]);
+    // Negate Y so that after rotateX(-PI/2), shape Y maps to +Z (matching 2D coords)
+    shape.moveTo(obj.points[0][0], -obj.points[0][1]);
     for (let i = 1; i < obj.points.length; i++) {
-      shape.lineTo(obj.points[i][0], obj.points[i][1]);
+      shape.lineTo(obj.points[i][0], -obj.points[i][1]);
     }
     shape.closePath();
 

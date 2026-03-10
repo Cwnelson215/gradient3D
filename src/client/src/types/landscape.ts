@@ -4,6 +4,8 @@ export type ViewMode = "plan" | "view3d" | "split";
 
 export type PlanTool = "select" | "pan" | "drawBoundary" | "drawHouse";
 
+export type CameraMode = "orbit" | "firstPerson" | "topDown";
+
 export interface ObjectStyle {
   fill?: string;
   stroke?: string;

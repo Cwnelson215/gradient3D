@@ -2,25 +2,24 @@ import { useRef, useEffect } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { PointerLockControls } from "@react-three/drei";
 import * as THREE from "three";
-import { useTerrainStore } from "../store/terrainStore";
-import { sampleHeight } from "../terrain/utils";
+import { useLandscapeStore } from "../store/landscapeStore";
 
 const SPEED = 20;
-const EYE_HEIGHT = 3;
+const EYE_HEIGHT = 5.5;
 
 export function FirstPersonMode() {
   const { camera } = useThree();
   const keys = useRef<Set<string>>(new Set());
   const controlsRef = useRef<any>(null);
 
+  const property = useLandscapeStore((s) => s.project?.property);
+  const widthFt = property?.widthFt ?? 100;
+  const depthFt = property?.depthFt ?? 100;
+
   useEffect(() => {
-    // Start at the edge of the terrain, looking inward, at proper ground height
-    const { heightmap, params } = useTerrainStore.getState();
-    const startX = params.worldWidth * 0.4;
-    const startZ = params.worldHeight * 0.4;
-    const h = sampleHeight(heightmap, startX, startZ, params);
-    camera.position.set(startX, h + EYE_HEIGHT, startZ);
-    camera.lookAt(0, h + EYE_HEIGHT, 0);
+    // Start near the center of the property
+    camera.position.set(widthFt / 2, EYE_HEIGHT, depthFt * 0.7);
+    camera.lookAt(widthFt / 2, EYE_HEIGHT, depthFt / 2);
 
     const onKeyDown = (e: KeyboardEvent) => keys.current.add(e.code);
     const onKeyUp = (e: KeyboardEvent) => keys.current.delete(e.code);
@@ -31,7 +30,7 @@ export function FirstPersonMode() {
       window.removeEventListener("keyup", onKeyUp);
       keys.current.clear();
     };
-  }, [camera]);
+  }, [camera, widthFt, depthFt]);
 
   useFrame((_, delta) => {
     const dir = new THREE.Vector3();
@@ -52,9 +51,10 @@ export function FirstPersonMode() {
       camera.position.add(move);
     }
 
-    const { heightmap, params } = useTerrainStore.getState();
-    const h = sampleHeight(heightmap, camera.position.x, camera.position.z, params);
-    camera.position.y = h + EYE_HEIGHT;
+    // Clamp to property bounds and fix height
+    camera.position.x = Math.max(0, Math.min(widthFt, camera.position.x));
+    camera.position.z = Math.max(0, Math.min(depthFt, camera.position.z));
+    camera.position.y = EYE_HEIGHT;
   });
 
   return <PointerLockControls ref={controlsRef} makeDefault />;

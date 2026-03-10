@@ -1,5 +1,5 @@
-import { useTerrainStore } from "../store/terrainStore";
-import { CameraMode } from "../types/terrain";
+import { useLandscapeStore } from "../store/landscapeStore";
+import type { CameraMode } from "../types/landscape";
 
 const modes: { id: CameraMode; label: string }[] = [
   { id: "orbit", label: "Orbit" },
@@ -8,8 +8,8 @@ const modes: { id: CameraMode; label: string }[] = [
 ];
 
 export function ModeSelector() {
-  const currentMode = useTerrainStore((s) => s.mode);
-  const setMode = useTerrainStore((s) => s.setMode);
+  const currentMode = useLandscapeStore((s) => s.cameraMode);
+  const setCameraMode = useLandscapeStore((s) => s.setCameraMode);
 
   return (
     <div
@@ -29,7 +29,7 @@ export function ModeSelector() {
       {modes.map(({ id, label }) => (
         <button
           key={id}
-          onClick={() => setMode(id)}
+          onClick={() => setCameraMode(id)}
           style={{
             padding: "8px 20px",
             border: "none",

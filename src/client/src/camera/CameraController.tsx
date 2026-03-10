@@ -1,10 +1,10 @@
-import { useTerrainStore } from "../store/terrainStore";
+import { useLandscapeStore } from "../store/landscapeStore";
 import { OrbitMode } from "./OrbitMode";
 import { FirstPersonMode } from "./FirstPersonMode";
 import { TopDownMode } from "./TopDownMode";
 
 export function CameraController() {
-  const mode = useTerrainStore((s) => s.mode);
+  const mode = useLandscapeStore((s) => s.cameraMode);
 
   switch (mode) {
     case "orbit":
