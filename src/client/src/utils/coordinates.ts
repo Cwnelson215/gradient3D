@@ -67,4 +67,11 @@ export function polygonArea(points: [number, number][]): number {
   return Math.abs(area / 2);
 }
 
+export function snapToGrid(worldX: number, worldY: number, gridSpacingFt: number): { x: number; y: number } {
+  return {
+    x: Math.round(worldX / gridSpacingFt) * gridSpacingFt,
+    y: Math.round(worldY / gridSpacingFt) * gridSpacingFt,
+  };
+}
+
 export { PIXELS_PER_FOOT };

@@ -13,6 +13,7 @@ import {
 } from "./tools/DrawPolygonTool";
 import { hitTest, startDrag, updateDrag, type DragState } from "./tools/SelectTool";
 import { PIXELS_PER_FOOT } from "../utils/coordinates";
+import { mergeWithOverlapping } from "../utils/polygonMerge";
 
 export function PlanView() {
   const project = useLandscapeStore((s) => s.project);
@@ -20,6 +21,7 @@ export function PlanView() {
   const addObject = useLandscapeStore((s) => s.addObject);
   const selectObject = useLandscapeStore((s) => s.selectObject);
   const updateObject = useLandscapeStore((s) => s.updateObject);
+  const removeObject = useLandscapeStore((s) => s.removeObject);
   const objects = useLandscapeStore((s) => s.project?.objects ?? []);
 
   const [dims, setDims] = useState({ w: 800, h: 600 });
@@ -71,14 +73,22 @@ export function PlanView() {
 
   const handleClick = (e: KonvaEventObject<MouseEvent>) => {
     if (activeTool === "drawBoundary" || activeTool === "drawHouse") {
-      const result = handleDrawClick(e, drawState, offset.x, offset.y, viewScale);
+      const result = handleDrawClick(e, drawState, offset.x, offset.y, viewScale, property.gridSpacingFt);
       if (result.closed) {
         const type = activeTool === "drawBoundary" ? "boundary" : "house";
+        const { mergedPoints, consumedIds } = mergeWithOverlapping(
+          result.state.points,
+          type,
+          objects
+        );
+        for (const id of consumedIds) {
+          removeObject(id);
+        }
         const name =
           type === "boundary"
             ? "Property Boundary"
             : `House ${objects.filter((o) => o.type === "house").length + 1}`;
-        addObject(type, name, result.state.points);
+        addObject(type, name, mergedPoints);
         setDrawState(initialDrawState);
       } else {
         setDrawState(result.state);
@@ -134,7 +144,7 @@ export function PlanView() {
     }
 
     if (activeTool === "drawBoundary" || activeTool === "drawHouse") {
-      setDrawState(handleDrawMouseMove(e, drawState, offset.x, offset.y, viewScale));
+      setDrawState(handleDrawMouseMove(e, drawState, offset.x, offset.y, viewScale, property.gridSpacingFt));
     }
   };
 
