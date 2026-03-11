@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import * as THREE from "three";
 import { useLandscapeStore } from "../store/landscapeStore";
+import { createGrassTexture } from "../utils/proceduralTextures";
 
 export function GroundPlane() {
   const property = useLandscapeStore((s) => s.project?.property);
@@ -14,21 +15,45 @@ export function GroundPlane() {
     const divisions = Math.max(divisionsX, divisionsZ);
     const size = Math.max(widthFt, depthFt);
     const helper = new THREE.GridHelper(size, divisions, "#555555", "#333333");
-    // Offset so grid aligns with property origin
     helper.position.set(widthFt / 2, 0.01, depthFt / 2);
     return helper;
   }, [widthFt, depthFt, gridSpacingFt]);
 
+  const grassMaps = useMemo(() => createGrassTexture(), []);
+
+  const geometry = useMemo(() => {
+    const segsX = Math.ceil(widthFt / 2);
+    const segsZ = Math.ceil(depthFt / 2);
+    const geom = new THREE.PlaneGeometry(widthFt, depthFt, segsX, segsZ);
+    // Subtle vertex displacement for natural ground undulation
+    const pos = geom.attributes.position;
+    let seed = 1234;
+    for (let i = 0; i < pos.count; i++) {
+      seed = (seed * 16807) % 2147483647;
+      const displacement = ((seed / 2147483647) - 0.5) * 0.1;
+      (pos as THREE.BufferAttribute).setZ(i, pos.getZ(i) + displacement);
+    }
+    pos.needsUpdate = true;
+    geom.computeVertexNormals();
+    return geom;
+  }, [widthFt, depthFt]);
+
   return (
     <group>
-      {/* Ground plane */}
+      {/* Ground plane with grass texture */}
       <mesh
         rotation={[-Math.PI / 2, 0, 0]}
         position={[widthFt / 2, 0, depthFt / 2]}
         receiveShadow
+        geometry={geometry}
       >
-        <planeGeometry args={[widthFt, depthFt]} />
-        <meshStandardMaterial color="#4a7c3f" roughness={0.9} />
+        <meshStandardMaterial
+          map={grassMaps.map}
+          normalMap={grassMaps.normalMap}
+          normalScale={new THREE.Vector2(0.5, 0.5)}
+          roughnessMap={grassMaps.roughnessMap}
+          roughness={0.85}
+        />
       </mesh>
 
       {/* Grid overlay */}

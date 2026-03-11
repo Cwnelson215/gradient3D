@@ -1,13 +1,16 @@
 import { useState, useRef } from "react";
 import { useLandscapeStore } from "../store/landscapeStore";
+import type { ProjectState } from "../types/landscape";
 
 export function ProjectSetupModal() {
   const initProject = useLandscapeStore((s) => s.initProject);
+  const loadProject = useLandscapeStore((s) => s.loadProject);
   const [widthFt, setWidthFt] = useState(100);
   const [depthFt, setDepthFt] = useState(80);
   const [gridSpacingFt, setGridSpacingFt] = useState(10);
   const [bgImage, setBgImage] = useState<string | undefined>(undefined);
   const fileRef = useRef<HTMLInputElement>(null);
+  const importRef = useRef<HTMLInputElement>(null);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -24,6 +27,27 @@ export function ProjectSetupModal() {
       gridSpacingFt,
       backgroundImage: bgImage,
     });
+  };
+
+  const handleLoadProject = () => {
+    importRef.current?.click();
+  };
+
+  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result as string) as ProjectState;
+        if (data.property && data.objects) {
+          loadProject(data);
+        }
+      } catch {
+        // invalid file
+      }
+    };
+    reader.readAsText(file);
   };
 
   return (
@@ -78,6 +102,21 @@ export function ProjectSetupModal() {
         <button onClick={handleCreate} style={createBtn}>
           Create Project
         </button>
+
+        <div style={{ textAlign: "center", margin: "12px 0 8px", color: "#666", fontSize: 12 }}>
+          or
+        </div>
+
+        <button onClick={handleLoadProject} style={{ ...createBtn, background: "#333" }}>
+          Load Project (.gradient.json)
+        </button>
+        <input
+          ref={importRef}
+          type="file"
+          accept=".json,.gradient.json"
+          onChange={handleImportFile}
+          style={{ display: "none" }}
+        />
       </div>
     </div>
   );

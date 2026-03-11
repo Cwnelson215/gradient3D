@@ -74,4 +74,14 @@ export function snapToGrid(worldX: number, worldY: number, gridSpacingFt: number
   };
 }
 
+export function polylineLength(points: [number, number][]): number {
+  let len = 0;
+  for (let i = 0; i < points.length - 1; i++) {
+    const dx = points[i + 1][0] - points[i][0];
+    const dy = points[i + 1][1] - points[i][1];
+    len += Math.sqrt(dx * dx + dy * dy);
+  }
+  return len;
+}
+
 export { PIXELS_PER_FOOT };

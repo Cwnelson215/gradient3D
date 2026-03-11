@@ -1,7 +1,9 @@
 import { Canvas } from "@react-three/fiber";
+import * as THREE from "three";
 import { GroundPlane } from "../terrain/GroundPlane";
 import { Sky } from "../environment/Sky";
 import { Lights } from "../environment/Lights";
+import { PostProcessing } from "../environment/PostProcessing";
 import { CameraController } from "../camera/CameraController";
 import { LandscapeObjects3D } from "./LandscapeObjects3D";
 import { useLandscapeStore } from "../store/landscapeStore";
@@ -21,6 +23,10 @@ export function SceneView() {
         far: 2000,
       }}
       shadows
+      gl={{
+        toneMapping: THREE.ACESFilmicToneMapping,
+        toneMappingExposure: 1.2,
+      }}
       style={{ width: "100%", height: "100%" }}
     >
       <CameraController />
@@ -28,6 +34,7 @@ export function SceneView() {
       <Lights />
       <GroundPlane />
       <LandscapeObjects3D />
+      <PostProcessing />
     </Canvas>
   );
 }

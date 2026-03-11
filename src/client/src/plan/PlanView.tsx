@@ -1,19 +1,43 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { Stage, Layer } from "react-konva";
 import type { KonvaEventObject } from "konva/lib/Node";
 import { useLandscapeStore } from "../store/landscapeStore";
 import { GridLayer } from "./layers/GridLayer";
 import { ObjectLayer } from "./layers/ObjectLayer";
 import { InteractionLayer } from "./layers/InteractionLayer";
+import { LabelLayer } from "./layers/LabelLayer";
 import {
   handleDrawClick,
   handleDrawMouseMove,
   initialDrawState,
   type DrawState,
 } from "./tools/DrawPolygonTool";
+import {
+  handleLineClick,
+  handleLineDoubleClick,
+  handleLineMouseMove,
+  handleLineKeyDown,
+  initialLineDrawState,
+  type LineDrawState,
+} from "./tools/DrawLineTool";
+import {
+  handlePointMouseDown as pointMouseDown,
+  handlePointMouseMove as pointMouseMove,
+  handlePointMouseUp as pointMouseUp,
+  initialPointDrawState,
+  type PointDrawState,
+} from "./tools/DrawPointTool";
+import {
+  handleMeasureClick,
+  handleMeasureMouseMove,
+  initialMeasureState,
+  type MeasureState,
+} from "./tools/MeasureTool";
 import { hitTest, startDrag, updateDrag, type DragState } from "./tools/SelectTool";
 import { PIXELS_PER_FOOT } from "../utils/coordinates";
 import { mergeWithOverlapping } from "../utils/polygonMerge";
+import { objectRegistry, toolToObjectType } from "../types/objectRegistry";
+import type Konva from "konva";
 
 export function PlanView() {
   const project = useLandscapeStore((s) => s.project);
@@ -24,13 +48,56 @@ export function PlanView() {
   const removeObject = useLandscapeStore((s) => s.removeObject);
   const objects = useLandscapeStore((s) => s.project?.objects ?? []);
 
+  const stageRef = useRef<Konva.Stage>(null);
+
   const [dims, setDims] = useState({ w: 800, h: 600 });
   const [viewScale, setViewScale] = useState(1);
   const [offset, setOffset] = useState({ x: 40, y: 40 });
   const [drawState, setDrawState] = useState<DrawState>(initialDrawState);
+  const [lineDrawState, setLineDrawState] = useState<LineDrawState>(initialLineDrawState);
+  const [pointDrawState, setPointDrawState] = useState<PointDrawState>(initialPointDrawState);
+  const [measureState, setMeasureState] = useState<MeasureState>(initialMeasureState);
   const [dragState, setDragState] = useState<DragState | null>(null);
   const [isPanning, setIsPanning] = useState(false);
   const panStart = useRef<{ x: number; y: number; ox: number; oy: number } | null>(null);
+
+  // Determine geometry mode from active tool
+  const objectType = toolToObjectType(activeTool);
+  const geometryMode = objectType ? objectRegistry[objectType].geometry : null;
+
+  // Reset draw states when switching tools
+  useEffect(() => {
+    setDrawState(initialDrawState);
+    setLineDrawState(initialLineDrawState);
+    setPointDrawState(initialPointDrawState);
+    setMeasureState(initialMeasureState);
+  }, [activeTool]);
+
+  // Keyboard handler for line tool (Enter/Escape) and undo/redo
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Line tool keyboard
+      if (geometryMode === "line" && lineDrawState.points.length > 0) {
+        const result = handleLineKeyDown(e, lineDrawState);
+        if (result) {
+          if (result.finished && objectType) {
+            finishLineObject(result.state.points, objectType);
+          }
+          setLineDrawState(result.finished ? initialLineDrawState : result.state);
+          return;
+        }
+      }
+      // Escape to cancel any drawing
+      if (e.key === "Escape") {
+        setDrawState(initialDrawState);
+        setLineDrawState(initialLineDrawState);
+        setPointDrawState(initialPointDrawState);
+        setMeasureState(initialMeasureState);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [geometryMode, lineDrawState, objectType]);
 
   // Resize observer
   const measuredRef = useCallback((node: HTMLDivElement | null) => {
@@ -46,6 +113,31 @@ export function PlanView() {
   if (!project) return null;
   const { property } = project;
 
+  function finishLineObject(points: [number, number][], type: string) {
+    const reg = objectRegistry[type as keyof typeof objectRegistry];
+    const count = objects.filter((o) => o.type === type).length + 1;
+    addObject(type as any, `${reg.label} ${count}`, points);
+  }
+
+  function finishPolygonObject(points: [number, number][], type: string) {
+    const reg = objectRegistry[type as keyof typeof objectRegistry];
+    // Only merge for boundary and house types
+    if (type === "boundary" || type === "house") {
+      const { mergedPoints, consumedIds } = mergeWithOverlapping(points, type as any, objects);
+      for (const id of consumedIds) {
+        removeObject(id);
+      }
+      const name =
+        type === "boundary"
+          ? "Property Boundary"
+          : `House ${objects.filter((o) => o.type === "house").length + 1}`;
+      addObject(type as any, name, mergedPoints);
+    } else {
+      const count = objects.filter((o) => o.type === type).length + 1;
+      addObject(type as any, `${reg.label} ${count}`, points);
+    }
+  }
+
   const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
     e.evt.preventDefault();
     const stage = e.target.getStage();
@@ -58,7 +150,6 @@ export function PlanView() {
     const newScale = direction > 0 ? viewScale * factor : viewScale / factor;
     const clampedScale = Math.min(Math.max(newScale, 0.1), 10);
 
-    // Zoom toward pointer
     const mousePointTo = {
       x: (pointer.x - offset.x) / (PIXELS_PER_FOOT * viewScale),
       y: (pointer.y - offset.y) / (PIXELS_PER_FOOT * viewScale),
@@ -72,30 +163,46 @@ export function PlanView() {
   };
 
   const handleClick = (e: KonvaEventObject<MouseEvent>) => {
-    if (activeTool === "drawBoundary" || activeTool === "drawHouse") {
+    if (activeTool === "measure") {
+      setMeasureState(handleMeasureClick(e, measureState, offset.x, offset.y, viewScale, property.gridSpacingFt));
+      return;
+    }
+
+    if (geometryMode === "polygon" && objectType) {
       const result = handleDrawClick(e, drawState, offset.x, offset.y, viewScale, property.gridSpacingFt);
       if (result.closed) {
-        const type = activeTool === "drawBoundary" ? "boundary" : "house";
-        const { mergedPoints, consumedIds } = mergeWithOverlapping(
-          result.state.points,
-          type,
-          objects
-        );
-        for (const id of consumedIds) {
-          removeObject(id);
-        }
-        const name =
-          type === "boundary"
-            ? "Property Boundary"
-            : `House ${objects.filter((o) => o.type === "house").length + 1}`;
-        addObject(type, name, mergedPoints);
+        finishPolygonObject(result.state.points, objectType);
         setDrawState(initialDrawState);
       } else {
         setDrawState(result.state);
       }
-    } else if (activeTool === "select") {
+      return;
+    }
+
+    if (geometryMode === "line" && objectType) {
+      const result = handleLineClick(e, lineDrawState, offset.x, offset.y, viewScale, property.gridSpacingFt);
+      if (result.finished) {
+        finishLineObject(result.state.points, objectType);
+        setLineDrawState(initialLineDrawState);
+      } else {
+        setLineDrawState(result.state);
+      }
+      return;
+    }
+
+    if (activeTool === "select") {
       const id = hitTest(e, objects, offset.x, offset.y, viewScale);
       selectObject(id);
+    }
+  };
+
+  const handleDblClick = (e: KonvaEventObject<MouseEvent>) => {
+    if (geometryMode === "line" && objectType && lineDrawState.points.length >= 2) {
+      const result = handleLineDoubleClick(lineDrawState);
+      if (result.finished) {
+        finishLineObject(result.state.points, objectType);
+        setLineDrawState(initialLineDrawState);
+      }
     }
   };
 
@@ -107,6 +214,13 @@ export function PlanView() {
       if (pos) {
         panStart.current = { x: pos.x, y: pos.y, ox: offset.x, oy: offset.y };
       }
+      return;
+    }
+
+    if (geometryMode === "point" && objectType) {
+      setPointDrawState(
+        pointMouseDown(e, pointDrawState, offset.x, offset.y, viewScale, property.gridSpacingFt)
+      );
       return;
     }
 
@@ -143,8 +257,24 @@ export function PlanView() {
       return;
     }
 
-    if (activeTool === "drawBoundary" || activeTool === "drawHouse") {
+    if (activeTool === "measure") {
+      setMeasureState(handleMeasureMouseMove(e, measureState, offset.x, offset.y, viewScale, property.gridSpacingFt));
+      return;
+    }
+
+    if (geometryMode === "polygon") {
       setDrawState(handleDrawMouseMove(e, drawState, offset.x, offset.y, viewScale, property.gridSpacingFt));
+      return;
+    }
+
+    if (geometryMode === "line") {
+      setLineDrawState(handleLineMouseMove(e, lineDrawState, offset.x, offset.y, viewScale, property.gridSpacingFt));
+      return;
+    }
+
+    if (geometryMode === "point") {
+      setPointDrawState(pointMouseMove(e, pointDrawState, offset.x, offset.y, viewScale));
+      return;
     }
   };
 
@@ -152,15 +282,30 @@ export function PlanView() {
     setIsPanning(false);
     panStart.current = null;
     setDragState(null);
+
+    if (geometryMode === "point" && objectType && pointDrawState.dragging) {
+      const defaultRadius = (objectRegistry[objectType].defaultProperties.radius as number) ?? 3;
+      const result = pointMouseUp(pointDrawState, defaultRadius);
+      if (result.finished && result.center) {
+        const reg = objectRegistry[objectType];
+        const count = objects.filter((o) => o.type === objectType).length + 1;
+        addObject(objectType, `${reg.label} ${count}`, [result.center], undefined, undefined, result.radius);
+      }
+      setPointDrawState(initialPointDrawState);
+    }
   };
+
+  const isDrawing = geometryMode !== null || activeTool === "measure";
 
   return (
     <div ref={measuredRef} style={{ width: "100%", height: "100%", background: "#111" }}>
       <Stage
+        ref={stageRef}
         width={dims.w}
         height={dims.h}
         onWheel={handleWheel}
         onClick={handleClick}
+        onDblClick={handleDblClick}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -168,7 +313,7 @@ export function PlanView() {
           cursor:
             activeTool === "pan"
               ? "grab"
-              : activeTool === "drawBoundary" || activeTool === "drawHouse"
+              : isDrawing
                 ? "crosshair"
                 : "default",
         }}
@@ -188,8 +333,14 @@ export function PlanView() {
           <ObjectLayer scale={viewScale} offsetX={offset.x} offsetY={offset.y} />
         </Layer>
         <Layer>
+          <LabelLayer scale={viewScale} offsetX={offset.x} offsetY={offset.y} />
+        </Layer>
+        <Layer>
           <InteractionLayer
             drawState={drawState}
+            lineDrawState={lineDrawState}
+            pointDrawState={pointDrawState}
+            measureState={measureState}
             scale={viewScale}
             offsetX={offset.x}
             offsetY={offset.y}
