@@ -1,6 +1,4 @@
 import { useLandscapeStore } from "../store/landscapeStore";
-import { ModeSelector } from "./ModeSelector";
-import { ViewModeToggle } from "./ViewModeToggle";
 import { PlanToolbar } from "./PlanToolbar";
 import { ObjectProperties } from "./ObjectProperties";
 import { FileMenu } from "./FileMenu";
@@ -46,11 +44,6 @@ const undoBtn: React.CSSProperties = {
 };
 
 export function HUD() {
-  const viewMode = useLandscapeStore((s) => s.viewMode);
-  const showPlan = viewMode === "plan" || viewMode === "split";
-  const show3D = viewMode === "view3d" || viewMode === "split";
-  const isSplit = viewMode === "split";
-
   return (
     <div
       style={{
@@ -60,30 +53,13 @@ export function HUD() {
         width: "100%",
         height: "100%",
         pointerEvents: "none",
-        display: isSplit ? "flex" : undefined,
       }}
     >
-      <ViewModeToggle />
       <FileMenu />
       <UndoRedoButtons />
       <ExportButtons />
-      {isSplit ? (
-        <>
-          <div style={{ position: "relative", width: "50%", height: "100%", pointerEvents: "none" }}>
-            <PlanToolbar />
-            <ObjectProperties />
-          </div>
-          <div style={{ position: "relative", width: "50%", height: "100%", pointerEvents: "none" }}>
-            <ModeSelector />
-          </div>
-        </>
-      ) : (
-        <>
-          {showPlan && <PlanToolbar />}
-          {showPlan && <ObjectProperties />}
-          {show3D && <ModeSelector />}
-        </>
-      )}
+      <PlanToolbar />
+      <ObjectProperties />
     </div>
   );
 }

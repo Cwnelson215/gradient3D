@@ -1,5 +1,5 @@
 import type { KonvaEventObject } from "konva/lib/Node";
-import { canvasToWorld, snapToGrid, PIXELS_PER_FOOT } from "../../utils/coordinates";
+import { canvasToWorld, snapToGrid, snapToExistingPoint, PIXELS_PER_FOOT } from "../../utils/coordinates";
 
 export interface LineDrawState {
   points: [number, number][];
@@ -17,7 +17,8 @@ export function handleLineClick(
   offsetX: number,
   offsetY: number,
   scale: number,
-  gridSpacingFt: number
+  gridSpacingFt: number,
+  objects: { points: [number, number][]; position: { x: number; y: number } }[] = []
 ): { state: LineDrawState; finished: boolean } {
   const stage = e.target.getStage();
   if (!stage) return { state, finished: false };
@@ -25,7 +26,8 @@ export function handleLineClick(
   if (!pos) return { state, finished: false };
 
   const world = canvasToWorld(pos.x, pos.y, offsetX, offsetY, scale);
-  const snapped = snapToGrid(world.x, world.y, gridSpacingFt);
+  const gridSnapped = snapToGrid(world.x, world.y, gridSpacingFt, scale);
+  const snapped = snapToExistingPoint(gridSnapped, objects, state.points, scale);
   const pt: [number, number] = [snapped.x, snapped.y];
 
   return {
@@ -53,7 +55,8 @@ export function handleLineMouseMove(
   offsetX: number,
   offsetY: number,
   scale: number,
-  gridSpacingFt: number
+  gridSpacingFt: number,
+  objects: { points: [number, number][]; position: { x: number; y: number } }[] = []
 ): LineDrawState {
   if (state.points.length === 0) return state;
   const stage = e.target.getStage();
@@ -62,7 +65,8 @@ export function handleLineMouseMove(
   if (!pos) return state;
 
   const world = canvasToWorld(pos.x, pos.y, offsetX, offsetY, scale);
-  const snapped = snapToGrid(world.x, world.y, gridSpacingFt);
+  const gridSnapped = snapToGrid(world.x, world.y, gridSpacingFt, scale);
+  const snapped = snapToExistingPoint(gridSnapped, objects, state.points, scale);
   return { ...state, previewPoint: [snapped.x, snapped.y] };
 }
 

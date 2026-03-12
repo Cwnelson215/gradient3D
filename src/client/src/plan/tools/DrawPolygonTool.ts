@@ -1,5 +1,5 @@
 import type { KonvaEventObject } from "konva/lib/Node";
-import { canvasToWorld, snapToGrid, PIXELS_PER_FOOT } from "../../utils/coordinates";
+import { canvasToWorld, snapToGrid, snapToExistingPoint, PIXELS_PER_FOOT } from "../../utils/coordinates";
 
 export interface DrawState {
   points: [number, number][];
@@ -19,7 +19,8 @@ export function handleDrawClick(
   offsetX: number,
   offsetY: number,
   scale: number,
-  gridSpacingFt: number
+  gridSpacingFt: number,
+  objects: { points: [number, number][]; position: { x: number; y: number } }[] = []
 ): { state: DrawState; closed: boolean } {
   const stage = e.target.getStage();
   if (!stage) return { state, closed: false };
@@ -28,7 +29,8 @@ export function handleDrawClick(
   if (!pos) return { state, closed: false };
 
   const world = canvasToWorld(pos.x, pos.y, offsetX, offsetY, scale);
-  const snapped = snapToGrid(world.x, world.y, gridSpacingFt);
+  const gridSnapped = snapToGrid(world.x, world.y, gridSpacingFt, scale);
+  const snapped = snapToExistingPoint(gridSnapped, objects, state.points, scale);
   const pt: [number, number] = [snapped.x, snapped.y];
 
   // Check if clicking near first point to close
@@ -57,7 +59,8 @@ export function handleDrawMouseMove(
   offsetX: number,
   offsetY: number,
   scale: number,
-  gridSpacingFt: number
+  gridSpacingFt: number,
+  objects: { points: [number, number][]; position: { x: number; y: number } }[] = []
 ): DrawState {
   if (state.points.length === 0) return state;
 
@@ -67,6 +70,7 @@ export function handleDrawMouseMove(
   if (!pos) return state;
 
   const world = canvasToWorld(pos.x, pos.y, offsetX, offsetY, scale);
-  const snapped = snapToGrid(world.x, world.y, gridSpacingFt);
+  const gridSnapped = snapToGrid(world.x, world.y, gridSpacingFt, scale);
+  const snapped = snapToExistingPoint(gridSnapped, objects, state.points, scale);
   return { ...state, previewPoint: [snapped.x, snapped.y] };
 }

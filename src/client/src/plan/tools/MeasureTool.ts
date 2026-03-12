@@ -27,7 +27,7 @@ export function handleMeasureClick(
   if (!pos) return state;
 
   const world = canvasToWorld(pos.x, pos.y, offsetX, offsetY, scale);
-  const snapped = snapToGrid(world.x, world.y, gridSpacingFt);
+  const snapped = snapToGrid(world.x, world.y, gridSpacingFt, scale);
   const pt: [number, number] = [snapped.x, snapped.y];
 
   if (!state.startPoint) {
@@ -52,7 +52,7 @@ export function handleMeasureMouseMove(
   if (!pos) return state;
 
   const world = canvasToWorld(pos.x, pos.y, offsetX, offsetY, scale);
-  const snapped = snapToGrid(world.x, world.y, gridSpacingFt);
+  const snapped = snapToGrid(world.x, world.y, gridSpacingFt, scale);
   return { ...state, previewPoint: [snapped.x, snapped.y] };
 }
 

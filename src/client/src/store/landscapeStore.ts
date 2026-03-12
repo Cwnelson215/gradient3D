@@ -8,7 +8,6 @@ import type {
   PropertyConfig,
   ViewMode,
   PlanTool,
-  CameraMode,
   ObjectType,
   ObjectStyle,
 } from "../types/landscape";
@@ -21,7 +20,6 @@ interface LandscapeStore {
   viewMode: ViewMode;
   activeTool: PlanTool;
   selectedObjectId: string | null;
-  cameraMode: CameraMode;
 
   // Undo/redo stacks (not persisted)
   undoStack: ProjectState[];
@@ -32,7 +30,6 @@ interface LandscapeStore {
   setViewMode: (mode: ViewMode) => void;
   setActiveTool: (tool: PlanTool) => void;
   selectObject: (id: string | null) => void;
-  setCameraMode: (mode: CameraMode) => void;
 
   addObject: (
     type: ObjectType,
@@ -63,7 +60,6 @@ export const useLandscapeStore = create<LandscapeStore>()(
       viewMode: "plan",
       activeTool: "select",
       selectedObjectId: null,
-      cameraMode: "orbit",
       undoStack: [],
       redoStack: [],
 
@@ -92,7 +88,6 @@ export const useLandscapeStore = create<LandscapeStore>()(
       setViewMode: (mode) => set({ viewMode: mode }),
       setActiveTool: (tool) => set({ activeTool: tool }),
       selectObject: (id) => set({ selectedObjectId: id }),
-      setCameraMode: (mode) => set({ cameraMode: mode }),
 
       addObject: (type, name, points, style, properties, radius) => {
         const id = uuidv4();

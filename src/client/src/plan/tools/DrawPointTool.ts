@@ -27,7 +27,7 @@ export function handlePointMouseDown(
   if (!pos) return state;
 
   const world = canvasToWorld(pos.x, pos.y, offsetX, offsetY, scale);
-  const snapped = snapToGrid(world.x, world.y, gridSpacingFt);
+  const snapped = snapToGrid(world.x, world.y, gridSpacingFt, scale);
   return {
     center: [snapped.x, snapped.y],
     radius: 0,

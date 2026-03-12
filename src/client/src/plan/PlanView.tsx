@@ -169,7 +169,7 @@ export function PlanView() {
     }
 
     if (geometryMode === "polygon" && objectType) {
-      const result = handleDrawClick(e, drawState, offset.x, offset.y, viewScale, property.gridSpacingFt);
+      const result = handleDrawClick(e, drawState, offset.x, offset.y, viewScale, property.gridSpacingFt, objects);
       if (result.closed) {
         finishPolygonObject(result.state.points, objectType);
         setDrawState(initialDrawState);
@@ -180,7 +180,7 @@ export function PlanView() {
     }
 
     if (geometryMode === "line" && objectType) {
-      const result = handleLineClick(e, lineDrawState, offset.x, offset.y, viewScale, property.gridSpacingFt);
+      const result = handleLineClick(e, lineDrawState, offset.x, offset.y, viewScale, property.gridSpacingFt, objects);
       if (result.finished) {
         finishLineObject(result.state.points, objectType);
         setLineDrawState(initialLineDrawState);
@@ -263,12 +263,12 @@ export function PlanView() {
     }
 
     if (geometryMode === "polygon") {
-      setDrawState(handleDrawMouseMove(e, drawState, offset.x, offset.y, viewScale, property.gridSpacingFt));
+      setDrawState(handleDrawMouseMove(e, drawState, offset.x, offset.y, viewScale, property.gridSpacingFt, objects));
       return;
     }
 
     if (geometryMode === "line") {
-      setLineDrawState(handleLineMouseMove(e, lineDrawState, offset.x, offset.y, viewScale, property.gridSpacingFt));
+      setLineDrawState(handleLineMouseMove(e, lineDrawState, offset.x, offset.y, viewScale, property.gridSpacingFt, objects));
       return;
     }
 

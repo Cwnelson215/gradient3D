@@ -18,7 +18,7 @@ export type ObjectType =
 export type GeometryMode = "polygon" | "line" | "point";
 export type ObjectCategory = "structure" | "hardscape" | "softscape" | "water";
 
-export type ViewMode = "plan" | "view3d" | "split";
+export type ViewMode = "plan";
 
 export type PlanTool =
   | "select"
@@ -39,8 +39,6 @@ export type PlanTool =
   | "drawPond"
   | "drawPool"
   | "drawIrrigation";
-
-export type CameraMode = "orbit" | "firstPerson" | "topDown";
 
 export interface ObjectStyle {
   fill?: string;

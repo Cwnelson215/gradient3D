@@ -26,10 +26,7 @@ export function canvasToWorld(
   };
 }
 
-/** Convert feet to Three.js units (1 foot = 1 unit) */
-export function worldTo3D(feetX: number, feetY: number): { x: number; z: number } {
-  return { x: feetX, z: feetY };
-}
+export const SNAP_INCREMENT_FT = 1 / 12;
 
 export function polygonCentroid(points: [number, number][]): [number, number] {
   if (points.length === 0) return [0, 0];
@@ -67,11 +64,51 @@ export function polygonArea(points: [number, number][]): number {
   return Math.abs(area / 2);
 }
 
-export function snapToGrid(worldX: number, worldY: number, gridSpacingFt: number): { x: number; y: number } {
+export function snapToGrid(worldX: number, worldY: number, gridSpacingFt: number, scale: number): { x: number; y: number } {
+  const finePixelSpacing = SNAP_INCREMENT_FT * PIXELS_PER_FOOT * scale;
+  const increment = finePixelSpacing >= 5 ? SNAP_INCREMENT_FT : gridSpacingFt;
   return {
-    x: Math.round(worldX / gridSpacingFt) * gridSpacingFt,
-    y: Math.round(worldY / gridSpacingFt) * gridSpacingFt,
+    x: Math.round(worldX / increment) * increment,
+    y: Math.round(worldY / increment) * increment,
   };
+}
+
+export function snapToExistingPoint(
+  gridSnapped: { x: number; y: number },
+  objects: { points: [number, number][]; position: { x: number; y: number } }[],
+  currentDrawingPoints: [number, number][],
+  scale: number,
+  thresholdPx: number = 12
+): { x: number; y: number } {
+  const thresholdWorld = thresholdPx / (PIXELS_PER_FOOT * scale);
+  let bestDist = thresholdWorld;
+  let bestPoint = gridSnapped;
+
+  for (const obj of objects) {
+    for (const pt of obj.points) {
+      const wx = pt[0] + obj.position.x;
+      const wy = pt[1] + obj.position.y;
+      const dx = gridSnapped.x - wx;
+      const dy = gridSnapped.y - wy;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestPoint = { x: wx, y: wy };
+      }
+    }
+  }
+
+  for (const pt of currentDrawingPoints) {
+    const dx = gridSnapped.x - pt[0];
+    const dy = gridSnapped.y - pt[1];
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < bestDist) {
+      bestDist = dist;
+      bestPoint = { x: pt[0], y: pt[1] };
+    }
+  }
+
+  return bestPoint;
 }
 
 export function polylineLength(points: [number, number][]): number {

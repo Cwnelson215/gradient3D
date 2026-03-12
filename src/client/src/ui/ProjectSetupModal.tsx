@@ -76,13 +76,14 @@ export function ProjectSetupModal() {
         </div>
 
         <div style={fieldGroup}>
-          <label style={label}>Grid Spacing (ft)</label>
+          <label style={label}>Grid Display Spacing (ft)</label>
           <input
             type="number"
             value={gridSpacingFt}
             onChange={(e) => setGridSpacingFt(Number(e.target.value))}
             style={input}
           />
+          <div style={{ marginTop: 4, color: "#666", fontSize: 11 }}>Snap resolution: 1 inch</div>
         </div>
 
         <div style={fieldGroup}>

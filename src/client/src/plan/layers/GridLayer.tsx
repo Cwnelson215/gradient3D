@@ -1,6 +1,6 @@
 import { Line, Image as KonvaImage } from "react-konva";
 import { useEffect, useState } from "react";
-import { PIXELS_PER_FOOT } from "../../utils/coordinates";
+import { PIXELS_PER_FOOT, SNAP_INCREMENT_FT } from "../../utils/coordinates";
 
 interface Props {
   widthFt: number;
@@ -37,9 +37,8 @@ export function GridLayer({
   }, [backgroundImage]);
 
   const lines: React.ReactNode[] = [];
-  const spacing = gridSpacingFt * pxScale;
 
-  // Vertical lines
+  // Major grid lines (display spacing)
   for (let x = 0; x <= widthFt; x += gridSpacingFt) {
     const px = x * pxScale + offsetX;
     lines.push(
@@ -51,8 +50,6 @@ export function GridLayer({
       />
     );
   }
-
-  // Horizontal lines
   for (let y = 0; y <= depthFt; y += gridSpacingFt) {
     const py = y * pxScale + offsetY;
     lines.push(
@@ -63,6 +60,36 @@ export function GridLayer({
         strokeWidth={0.5}
       />
     );
+  }
+
+  // Fine 1/12 ft (1 inch) grid lines — only when zoomed in enough
+  const finePixelSpacing = SNAP_INCREMENT_FT * pxScale;
+  if (finePixelSpacing >= 5) {
+    for (let x = 0; x <= widthFt; x += SNAP_INCREMENT_FT) {
+      // Skip positions that coincide with major grid lines
+      if (Math.abs(x % gridSpacingFt) < 1e-6 || Math.abs((x % gridSpacingFt) - gridSpacingFt) < 1e-6) continue;
+      const px = x * pxScale + offsetX;
+      lines.push(
+        <Line
+          key={`fv${x}`}
+          points={[px, offsetY, px, offsetY + h]}
+          stroke="#222"
+          strokeWidth={0.25}
+        />
+      );
+    }
+    for (let y = 0; y <= depthFt; y += SNAP_INCREMENT_FT) {
+      if (Math.abs(y % gridSpacingFt) < 1e-6 || Math.abs((y % gridSpacingFt) - gridSpacingFt) < 1e-6) continue;
+      const py = y * pxScale + offsetY;
+      lines.push(
+        <Line
+          key={`fh${y}`}
+          points={[offsetX, py, offsetX + w, py]}
+          stroke="#222"
+          strokeWidth={0.25}
+        />
+      );
+    }
   }
 
   return (

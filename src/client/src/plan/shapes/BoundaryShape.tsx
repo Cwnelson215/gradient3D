@@ -36,7 +36,7 @@ export function BoundaryShape({ obj, scale, offsetX, offsetY, selected, onSelect
           key={i}
           x={(p[0] + obj.position.x) * pxScale + offsetX}
           y={(p[1] + obj.position.y) * pxScale + offsetY}
-          radius={selected ? 5 : 3}
+          radius={selected ? 4 : 2}
           fill={selected ? "#fff" : "#ffcc00"}
           onClick={onSelect}
           onTap={onSelect}

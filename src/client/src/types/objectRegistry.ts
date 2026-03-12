@@ -41,7 +41,7 @@ export const objectRegistry: Record<ObjectType, ObjectRegistryEntry> = {
     defaultStyle: {
       stroke: "#666666",
       strokeWidth: 2,
-      fill: "#8B7355",
+      fill: "#c0b0a0",
       opacity: 0.8,
     },
     defaultProperties: {},
@@ -69,7 +69,7 @@ export const objectRegistry: Record<ObjectType, ObjectRegistryEntry> = {
     defaultStyle: {
       stroke: "#999999",
       strokeWidth: 1,
-      fill: "#b0a090",
+      fill: "#c4b5a0",
       opacity: 0.8,
     },
     defaultProperties: {},
@@ -83,7 +83,7 @@ export const objectRegistry: Record<ObjectType, ObjectRegistryEntry> = {
     defaultStyle: {
       stroke: "#888888",
       strokeWidth: 1,
-      fill: "#a0a0a0",
+      fill: "#b5b5b5",
       opacity: 0.8,
     },
     defaultProperties: {},
@@ -97,7 +97,7 @@ export const objectRegistry: Record<ObjectType, ObjectRegistryEntry> = {
     defaultStyle: {
       stroke: "#8B7355",
       strokeWidth: 1,
-      fill: "#c4a882",
+      fill: "#c9b08a",
       opacity: 0.8,
     },
     defaultProperties: {},
@@ -167,7 +167,7 @@ export const objectRegistry: Record<ObjectType, ObjectRegistryEntry> = {
     defaultStyle: {
       stroke: "#5a3e1b",
       strokeWidth: 1,
-      fill: "#8B6914",
+      fill: "#7a5930",
       opacity: 0.7,
     },
     defaultProperties: {},
@@ -181,7 +181,7 @@ export const objectRegistry: Record<ObjectType, ObjectRegistryEntry> = {
     defaultStyle: {
       stroke: "#2d7a1e",
       strokeWidth: 1,
-      fill: "#4CAF50",
+      fill: "#5a8a4a",
       opacity: 0.6,
     },
     defaultProperties: {},
@@ -195,7 +195,7 @@ export const objectRegistry: Record<ObjectType, ObjectRegistryEntry> = {
     defaultStyle: {
       stroke: "#1a6b8a",
       strokeWidth: 1,
-      fill: "#2196F3",
+      fill: "#3a7aaa",
       opacity: 0.6,
     },
     defaultProperties: {},
@@ -209,7 +209,7 @@ export const objectRegistry: Record<ObjectType, ObjectRegistryEntry> = {
     defaultStyle: {
       stroke: "#0d47a1",
       strokeWidth: 2,
-      fill: "#42A5F5",
+      fill: "#5a9ac0",
       opacity: 0.7,
     },
     defaultProperties: { depth: 6 },
