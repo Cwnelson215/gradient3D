@@ -1,17 +1,72 @@
 const PIXELS_PER_FOOT = 8;
 
-export const FINE_GRID_LEVELS = [
+export interface GridLevel {
+  spacingFt: number;
+  label: string;
+  stroke: string;
+  strokeWidth: number;
+}
+
+/** @deprecated Use getGridLevels(gridSpacingFt) instead */
+export const FINE_GRID_LEVELS: GridLevel[] = [
   { spacingFt: 5,      label: "5 ft",   stroke: "#2e2e2e", strokeWidth: 0.4  },
   { spacingFt: 1,      label: "1 ft",   stroke: "#262626", strokeWidth: 0.3  },
   { spacingFt: 1 / 2,  label: "6 in",   stroke: "#222",    strokeWidth: 0.25 },
   { spacingFt: 1 / 12, label: "1 in",   stroke: "#1e1e1e", strokeWidth: 0.2  },
 ];
 
+const NICE_VALUES: { spacingFt: number; label: string }[] = [
+  { spacingFt: 500,    label: "500 ft" },
+  { spacingFt: 200,    label: "200 ft" },
+  { spacingFt: 100,    label: "100 ft" },
+  { spacingFt: 50,     label: "50 ft"  },
+  { spacingFt: 20,     label: "20 ft"  },
+  { spacingFt: 10,     label: "10 ft"  },
+  { spacingFt: 5,      label: "5 ft"   },
+  { spacingFt: 2,      label: "2 ft"   },
+  { spacingFt: 1,      label: "1 ft"   },
+  { spacingFt: 1 / 2,  label: "6 in"   },
+  { spacingFt: 1 / 12, label: "1 in"   },
+];
+
+// Styling gradient: index 0 = coarsest visible fine level (most prominent)
+const STYLE_GRADIENT: { stroke: string; strokeWidth: number }[] = [
+  { stroke: "#2e2e2e", strokeWidth: 0.4  },
+  { stroke: "#2a2a2a", strokeWidth: 0.35 },
+  { stroke: "#262626", strokeWidth: 0.3  },
+  { stroke: "#242424", strokeWidth: 0.28 },
+  { stroke: "#222",    strokeWidth: 0.25 },
+  { stroke: "#202020", strokeWidth: 0.22 },
+  { stroke: "#1e1e1e", strokeWidth: 0.2  },
+];
+
+export function getGridLevels(gridSpacingFt: number): GridLevel[] {
+  // Build a clean subdivision chain: each level must evenly divide the one above it.
+  // This prevents overlapping patterns (e.g., 50 and 20 both visible under a 100 grid).
+  const chain: { spacingFt: number; label: string }[] = [];
+  let parent = gridSpacingFt;
+  for (const v of NICE_VALUES) {
+    if (v.spacingFt >= parent) continue;
+    const ratio = parent / v.spacingFt;
+    if (Math.abs(ratio - Math.round(ratio)) < 1e-9) {
+      chain.push(v);
+      parent = v.spacingFt;
+    }
+  }
+  return chain.map((v, i) => ({
+    spacingFt: v.spacingFt,
+    label: v.label,
+    stroke: STYLE_GRADIENT[Math.min(i, STYLE_GRADIENT.length - 1)].stroke,
+    strokeWidth: STYLE_GRADIENT[Math.min(i, STYLE_GRADIENT.length - 1)].strokeWidth,
+  }));
+}
+
 export const MIN_PIXEL_THRESHOLD = 40;
 
 export function getFinestVisibleIncrement(scale: number, majorSpacingFt: number): number {
+  const levels = getGridLevels(majorSpacingFt);
   let finest = majorSpacingFt;
-  for (const level of FINE_GRID_LEVELS) {
+  for (const level of levels) {
     if (level.spacingFt * PIXELS_PER_FOOT * scale >= MIN_PIXEL_THRESHOLD) {
       finest = level.spacingFt;
     }

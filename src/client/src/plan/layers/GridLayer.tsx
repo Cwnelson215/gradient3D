@@ -1,6 +1,6 @@
 import { Line, Image as KonvaImage } from "react-konva";
 import { useEffect, useState } from "react";
-import { PIXELS_PER_FOOT, FINE_GRID_LEVELS, MIN_PIXEL_THRESHOLD } from "../../utils/coordinates";
+import { PIXELS_PER_FOOT, getGridLevels, MIN_PIXEL_THRESHOLD } from "../../utils/coordinates";
 
 interface Props {
   widthFt: number;
@@ -15,8 +15,8 @@ interface Props {
 }
 
 function coincides(value: number, spacing: number): boolean {
-  const remainder = value % spacing;
-  return Math.abs(remainder) < 1e-6 || Math.abs(remainder - spacing) < 1e-6;
+  const ratio = value / spacing;
+  return Math.abs(ratio - Math.round(ratio)) < 1e-9;
 }
 
 export function GridLayer({
@@ -77,8 +77,9 @@ export function GridLayer({
     );
   }
 
-  // Progressive fine grid levels
-  const visibleLevels = FINE_GRID_LEVELS.filter(
+  // Progressive fine grid levels (adaptive to major grid spacing)
+  const gridLevels = getGridLevels(gridSpacingFt);
+  const visibleLevels = gridLevels.filter(
     (level) => level.spacingFt * pxScale >= MIN_PIXEL_THRESHOLD
   );
 
@@ -86,13 +87,13 @@ export function GridLayer({
     const spacing = level.spacingFt;
 
     // Coarser spacings that this level should skip (major grid + any coarser fine levels)
-    const coarserSpacings = [gridSpacingFt, ...FINE_GRID_LEVELS.filter(l => l.spacingFt > spacing).map(l => l.spacingFt)];
+    const coarserSpacings = [gridSpacingFt, ...gridLevels.filter(l => l.spacingFt > spacing).map(l => l.spacingFt)];
 
-    // Clamp iteration to viewport + property bounds
-    const xStart = Math.max(0, Math.floor(viewMinXWorld / spacing) * spacing);
-    const xEnd = Math.min(widthFt, viewMaxXWorld);
-    const yStart = Math.max(0, Math.floor(viewMinYWorld / spacing) * spacing);
-    const yEnd = Math.min(depthFt, viewMaxYWorld);
+    // Integer-based iteration to avoid floating point accumulation
+    const iXStart = Math.max(0, Math.floor(viewMinXWorld / spacing));
+    const iXEnd = Math.min(Math.ceil(widthFt / spacing), Math.ceil(viewMaxXWorld / spacing));
+    const iYStart = Math.max(0, Math.floor(viewMinYWorld / spacing));
+    const iYEnd = Math.min(Math.ceil(depthFt / spacing), Math.ceil(viewMaxYWorld / spacing));
 
     // Clip line endpoints to property bounds
     const lineYStart = offsetY;
@@ -100,24 +101,28 @@ export function GridLayer({
     const lineXStart = offsetX;
     const lineXEnd = offsetX + w;
 
-    for (let x = xStart; x <= xEnd; x += spacing) {
+    for (let i = iXStart; i <= iXEnd; i++) {
+      const x = i * spacing;
+      if (x > widthFt) break;
       if (coarserSpacings.some(cs => coincides(x, cs))) continue;
       const px = x * pxScale + offsetX;
       lines.push(
         <Line
-          key={`fv-${level.label}-${x}`}
+          key={`fv-${level.label}-${i}`}
           points={[px, lineYStart, px, lineYEnd]}
           stroke={level.stroke}
           strokeWidth={level.strokeWidth}
         />
       );
     }
-    for (let y = yStart; y <= yEnd; y += spacing) {
+    for (let i = iYStart; i <= iYEnd; i++) {
+      const y = i * spacing;
+      if (y > depthFt) break;
       if (coarserSpacings.some(cs => coincides(y, cs))) continue;
       const py = y * pxScale + offsetY;
       lines.push(
         <Line
-          key={`fh-${level.label}-${y}`}
+          key={`fh-${level.label}-${i}`}
           points={[lineXStart, py, lineXEnd, py]}
           stroke={level.stroke}
           strokeWidth={level.strokeWidth}
