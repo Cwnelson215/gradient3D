@@ -1,6 +1,6 @@
 import { Line, Image as KonvaImage } from "react-konva";
 import { useEffect, useState } from "react";
-import { PIXELS_PER_FOOT, SNAP_INCREMENT_FT } from "../../utils/coordinates";
+import { PIXELS_PER_FOOT, FINE_GRID_LEVELS, MIN_PIXEL_THRESHOLD } from "../../utils/coordinates";
 
 interface Props {
   widthFt: number;
@@ -10,6 +10,13 @@ interface Props {
   offsetX: number;
   offsetY: number;
   backgroundImage?: string;
+  stageWidth?: number;
+  stageHeight?: number;
+}
+
+function coincides(value: number, spacing: number): boolean {
+  const remainder = value % spacing;
+  return Math.abs(remainder) < 1e-6 || Math.abs(remainder - spacing) < 1e-6;
 }
 
 export function GridLayer({
@@ -20,6 +27,8 @@ export function GridLayer({
   offsetX,
   offsetY,
   backgroundImage,
+  stageWidth = 2000,
+  stageHeight = 2000,
 }: Props) {
   const [img, setImg] = useState<HTMLImageElement | null>(null);
   const pxScale = PIXELS_PER_FOOT * scale;
@@ -38,7 +47,13 @@ export function GridLayer({
 
   const lines: React.ReactNode[] = [];
 
-  // Major grid lines (display spacing)
+  // Viewport bounds in world coordinates (for culling fine grid lines)
+  const viewMinXWorld = -offsetX / pxScale;
+  const viewMaxXWorld = (stageWidth - offsetX) / pxScale;
+  const viewMinYWorld = -offsetY / pxScale;
+  const viewMaxYWorld = (stageHeight - offsetY) / pxScale;
+
+  // Major grid lines (always drawn across full property)
   for (let x = 0; x <= widthFt; x += gridSpacingFt) {
     const px = x * pxScale + offsetX;
     lines.push(
@@ -62,31 +77,50 @@ export function GridLayer({
     );
   }
 
-  // Fine 1/12 ft (1 inch) grid lines — only when zoomed in enough
-  const finePixelSpacing = SNAP_INCREMENT_FT * pxScale;
-  if (finePixelSpacing >= 5) {
-    for (let x = 0; x <= widthFt; x += SNAP_INCREMENT_FT) {
-      // Skip positions that coincide with major grid lines
-      if (Math.abs(x % gridSpacingFt) < 1e-6 || Math.abs((x % gridSpacingFt) - gridSpacingFt) < 1e-6) continue;
+  // Progressive fine grid levels
+  const visibleLevels = FINE_GRID_LEVELS.filter(
+    (level) => level.spacingFt * pxScale >= MIN_PIXEL_THRESHOLD
+  );
+
+  for (const level of visibleLevels) {
+    const spacing = level.spacingFt;
+
+    // Coarser spacings that this level should skip (major grid + any coarser fine levels)
+    const coarserSpacings = [gridSpacingFt, ...FINE_GRID_LEVELS.filter(l => l.spacingFt > spacing).map(l => l.spacingFt)];
+
+    // Clamp iteration to viewport + property bounds
+    const xStart = Math.max(0, Math.floor(viewMinXWorld / spacing) * spacing);
+    const xEnd = Math.min(widthFt, viewMaxXWorld);
+    const yStart = Math.max(0, Math.floor(viewMinYWorld / spacing) * spacing);
+    const yEnd = Math.min(depthFt, viewMaxYWorld);
+
+    // Clip line endpoints to property bounds
+    const lineYStart = offsetY;
+    const lineYEnd = offsetY + h;
+    const lineXStart = offsetX;
+    const lineXEnd = offsetX + w;
+
+    for (let x = xStart; x <= xEnd; x += spacing) {
+      if (coarserSpacings.some(cs => coincides(x, cs))) continue;
       const px = x * pxScale + offsetX;
       lines.push(
         <Line
-          key={`fv${x}`}
-          points={[px, offsetY, px, offsetY + h]}
-          stroke="#222"
-          strokeWidth={0.25}
+          key={`fv-${level.label}-${x}`}
+          points={[px, lineYStart, px, lineYEnd]}
+          stroke={level.stroke}
+          strokeWidth={level.strokeWidth}
         />
       );
     }
-    for (let y = 0; y <= depthFt; y += SNAP_INCREMENT_FT) {
-      if (Math.abs(y % gridSpacingFt) < 1e-6 || Math.abs((y % gridSpacingFt) - gridSpacingFt) < 1e-6) continue;
+    for (let y = yStart; y <= yEnd; y += spacing) {
+      if (coarserSpacings.some(cs => coincides(y, cs))) continue;
       const py = y * pxScale + offsetY;
       lines.push(
         <Line
-          key={`fh${y}`}
-          points={[offsetX, py, offsetX + w, py]}
-          stroke="#222"
-          strokeWidth={0.25}
+          key={`fh-${level.label}-${y}`}
+          points={[lineXStart, py, lineXEnd, py]}
+          stroke={level.stroke}
+          strokeWidth={level.strokeWidth}
         />
       );
     }

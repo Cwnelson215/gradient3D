@@ -4,7 +4,7 @@ import type { LineDrawState } from "../tools/DrawLineTool";
 import type { PointDrawState } from "../tools/DrawPointTool";
 import type { MeasureState } from "../tools/MeasureTool";
 import { getMeasureDistance } from "../tools/MeasureTool";
-import { PIXELS_PER_FOOT } from "../../utils/coordinates";
+import { PIXELS_PER_FOOT, polylineLength } from "../../utils/coordinates";
 
 interface Props {
   drawState: DrawState;
@@ -71,6 +71,21 @@ function PolygonPreview({
           strokeWidth={1}
         />
       ))}
+      {previewPoint && points.length >= 1 && (() => {
+        const prev = points[points.length - 1];
+        const length = polylineLength([prev, previewPoint]);
+        return (
+          <Text
+            x={previewPoint[0] * pxScale + offsetX + 12}
+            y={previewPoint[1] * pxScale + offsetY - 16}
+            text={`${length.toFixed(1)} ft`}
+            fill="#4a9eff"
+            fontSize={13}
+            fontFamily="monospace"
+            fontStyle="bold"
+          />
+        );
+      })()}
     </>
   );
 }
@@ -109,6 +124,21 @@ function LinePreview({
           strokeWidth={1}
         />
       ))}
+      {previewPoint && points.length >= 1 && (() => {
+        const prev = points[points.length - 1];
+        const length = polylineLength([prev, previewPoint]);
+        return (
+          <Text
+            x={previewPoint[0] * pxScale + offsetX + 12}
+            y={previewPoint[1] * pxScale + offsetY - 16}
+            text={`${length.toFixed(1)} ft`}
+            fill="#ff9e4a"
+            fontSize={13}
+            fontFamily="monospace"
+            fontStyle="bold"
+          />
+        );
+      })()}
     </>
   );
 }

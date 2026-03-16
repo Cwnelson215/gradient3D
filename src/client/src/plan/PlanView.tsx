@@ -148,7 +148,7 @@ export function PlanView() {
     const direction = e.evt.deltaY > 0 ? -1 : 1;
     const factor = 1.1;
     const newScale = direction > 0 ? viewScale * factor : viewScale / factor;
-    const clampedScale = Math.min(Math.max(newScale, 0.1), 10);
+    const clampedScale = Math.min(Math.max(newScale, 0.1), 20);
 
     const mousePointTo = {
       x: (pointer.x - offset.x) / (PIXELS_PER_FOOT * viewScale),
@@ -327,6 +327,8 @@ export function PlanView() {
             offsetX={offset.x}
             offsetY={offset.y}
             backgroundImage={property.backgroundImage}
+            stageWidth={dims.w}
+            stageHeight={dims.h}
           />
         </Layer>
         <Layer>

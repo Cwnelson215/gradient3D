@@ -1,5 +1,24 @@
 const PIXELS_PER_FOOT = 8;
 
+export const FINE_GRID_LEVELS = [
+  { spacingFt: 5,      label: "5 ft",   stroke: "#2e2e2e", strokeWidth: 0.4  },
+  { spacingFt: 1,      label: "1 ft",   stroke: "#262626", strokeWidth: 0.3  },
+  { spacingFt: 1 / 2,  label: "6 in",   stroke: "#222",    strokeWidth: 0.25 },
+  { spacingFt: 1 / 12, label: "1 in",   stroke: "#1e1e1e", strokeWidth: 0.2  },
+];
+
+export const MIN_PIXEL_THRESHOLD = 40;
+
+export function getFinestVisibleIncrement(scale: number, majorSpacingFt: number): number {
+  let finest = majorSpacingFt;
+  for (const level of FINE_GRID_LEVELS) {
+    if (level.spacingFt * PIXELS_PER_FOOT * scale >= MIN_PIXEL_THRESHOLD) {
+      finest = level.spacingFt;
+    }
+  }
+  return finest;
+}
+
 export function worldToCanvas(
   worldX: number,
   worldY: number,
@@ -26,7 +45,7 @@ export function canvasToWorld(
   };
 }
 
-export const SNAP_INCREMENT_FT = 1 / 12;
+export const SNAP_INCREMENT_FT = 1 / 12; // kept for backward compat
 
 export function polygonCentroid(points: [number, number][]): [number, number] {
   if (points.length === 0) return [0, 0];
@@ -65,8 +84,7 @@ export function polygonArea(points: [number, number][]): number {
 }
 
 export function snapToGrid(worldX: number, worldY: number, gridSpacingFt: number, scale: number): { x: number; y: number } {
-  const finePixelSpacing = SNAP_INCREMENT_FT * PIXELS_PER_FOOT * scale;
-  const increment = finePixelSpacing >= 5 ? SNAP_INCREMENT_FT : gridSpacingFt;
+  const increment = getFinestVisibleIncrement(scale, gridSpacingFt);
   return {
     x: Math.round(worldX / increment) * increment,
     y: Math.round(worldY / increment) * increment,
