@@ -4,7 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Repo Is
 
-A containerized web application deployed on the portfolio platform. Infrastructure is defined with Pulumi (TypeScript) and references shared AWS resources (VPC, ALB, ECS cluster) from the platform stack via `pulumi.StackReference`.
+Gradient is a 2D landscape design web application for creating professional landscaping plans. Users draw property layouts with landscape elements (structures, hardscape, softscape, water features), measure dimensions, manage layers, and export designs as print-ready layouts with material summaries.
+
+The app is containerized and deployed on the portfolio platform. Infrastructure is defined with Pulumi (TypeScript) and references shared AWS resources (VPC, ALB, ECS cluster) from the platform stack via `pulumi.StackReference`.
+
+## Tech Stack
+
+- **Frontend:** React 18, TypeScript, Vite, Konva/React-Konva (canvas rendering), Zustand + Immer (state management), polygon-clipping (geometry)
+- **Backend:** Express.js serving the built client + health endpoint
+- **Infrastructure:** Pulumi, AWS (ECR, ECS Fargate Spot, ALB, Route53, CloudWatch), Docker
 
 ## Commands
 
@@ -19,6 +27,29 @@ npm start             # Start production server
 npm run preview       # Preview infra changes
 npm run up            # Deploy infra
 npm run destroy       # Tear down infra
+```
+
+## Source Structure
+
+```
+src/
+├── client/                 # React SPA (built to dist/client)
+│   └── src/
+│       ├── App.tsx         # Main app with keyboard handlers
+│       ├── main.tsx        # React entry point
+│       ├── plan/           # Canvas drawing system
+│       │   ├── PlanView.tsx      # Konva Stage + tool coordination
+│       │   ├── shapes/           # Renderables (House, Polygon, Point, etc.)
+│       │   ├── tools/            # Drawing logic (SelectTool, DrawPolygon, Measure, etc.)
+│       │   ├── layers/           # Canvas layers (Grid, Objects, Interaction, Labels)
+│       │   └── patterns/         # SVG patterns for fills
+│       ├── store/          # Zustand store (landscape state, undo/redo)
+│       ├── types/          # TypeScript types (LandscapeObject, ObjectRegistry)
+│       ├── export/         # Export generators (print layout, material summary)
+│       ├── ui/             # UI components (toolbar, panels, modals, menus)
+│       └── utils/          # Utilities (coordinates, polygon math)
+├── server/                 # Express server
+│   └── index.ts            # Serves client dist + health endpoint
 ```
 
 ## Architecture
@@ -36,7 +67,8 @@ All shared resources (VPC, ALB, ECS cluster, Route53, ACM, CloudWatch log group)
 
 ## Key Files
 
-- `src/` — Application source code
+- `src/client/` — React SPA source
+- `src/server/` — Express server
 - `index.ts` — Pulumi infrastructure definition
 - `Pulumi.yaml` — Project metadata
 - `Pulumi.dev.yaml` — Environment config (appName, subdomain, platformStack, cpu, memory, etc.)
@@ -50,3 +82,5 @@ All shared resources (VPC, ALB, ECS cluster, Route53, ACM, CloudWatch log group)
 - **Logs:** CloudWatch at `/ecs/portfolio-dev/gradient`, 14-day retention.
 - **Platform stack reference:** `cwnelson/portfolio-platform/dev`
 - **Health check:** `GET /health` must return HTTP 200 — this is used by both the ALB target group and the ECS container health check.
+- **State management:** Zustand store with Immer for immutable updates. Undo/redo history capped at 50 levels.
+- **Canvas rendering:** All drawing happens on Konva layers (Grid, Objects, Interaction, Labels). Shapes snap to a 1/12 grid.
