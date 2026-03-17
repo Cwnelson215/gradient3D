@@ -4,6 +4,7 @@ import { HouseShape } from "../shapes/HouseShape";
 import { PolygonShape } from "../shapes/PolygonShape";
 import { LineShape } from "../shapes/LineShape";
 import { PointShape } from "../shapes/PointShape";
+import { AnnotationShape } from "../shapes/AnnotationShape";
 import type { LandscapeObject } from "../../types/landscape";
 
 interface Props {
@@ -29,9 +30,10 @@ function ShapeForObject({
 }) {
   const shapeProps = { obj, scale, offsetX, offsetY, selected, onSelect };
 
-  // Special renderers for boundary and house (legacy look)
+  // Special renderers
   if (obj.type === "boundary") return <BoundaryShape {...shapeProps} />;
   if (obj.type === "house") return <HouseShape {...shapeProps} />;
+  if (obj.type === "annotation") return <AnnotationShape {...shapeProps} />;
 
   // Generic renderers by geometry mode
   switch (obj.geometry) {

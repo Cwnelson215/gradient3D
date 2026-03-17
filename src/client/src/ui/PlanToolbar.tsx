@@ -2,6 +2,18 @@ import { useState } from "react";
 import { useLandscapeStore } from "../store/landscapeStore";
 import type { PlanTool, ObjectCategory } from "../types/landscape";
 import { getRegistryByCategory } from "../types/objectRegistry";
+import { colors, font, spacing, radius, shadow, transition } from "./theme";
+import {
+  CursorIcon,
+  HandIcon,
+  RulerIcon,
+  HouseIcon,
+  SquareIcon,
+  LeafIcon,
+  DropletIcon,
+  TextIcon,
+  ChevronDownIcon,
+} from "./icons";
 
 const categoryLabels: Record<ObjectCategory, string> = {
   structure: "Structure",
@@ -10,12 +22,19 @@ const categoryLabels: Record<ObjectCategory, string> = {
   water: "Water",
 };
 
+const categoryIcons: Record<ObjectCategory, React.ReactNode> = {
+  structure: <HouseIcon size={14} />,
+  hardscape: <SquareIcon size={14} />,
+  softscape: <LeafIcon size={14} />,
+  water: <DropletIcon size={14} />,
+};
+
 const categoryOrder: ObjectCategory[] = ["structure", "hardscape", "softscape", "water"];
 
-const topTools: { key: PlanTool; label: string }[] = [
-  { key: "select", label: "Select" },
-  { key: "pan", label: "Pan" },
-  { key: "measure", label: "Measure" },
+const topTools: { key: PlanTool; label: string; icon: React.ReactNode }[] = [
+  { key: "select", label: "Select", icon: <CursorIcon size={14} /> },
+  { key: "pan", label: "Pan", icon: <HandIcon size={14} /> },
+  { key: "measure", label: "Measure", icon: <RulerIcon size={14} /> },
 ];
 
 export function PlanToolbar() {
@@ -34,7 +53,6 @@ export function PlanToolbar() {
     setOpenCategory(null);
   };
 
-  // Check if active tool belongs to a category
   const activeCategoryTool = (cat: ObjectCategory) =>
     grouped[cat].some((e) => e.tool === activeTool);
 
@@ -43,13 +61,15 @@ export function PlanToolbar() {
       {topTools.map((t) => (
         <button
           key={t.key}
-          onClick={() => { handleToolSelect(t.key); }}
+          onClick={() => handleToolSelect(t.key)}
           style={{
             ...btn,
-            background: activeTool === t.key ? "#4a9eff" : "#222",
-            color: activeTool === t.key ? "#fff" : "#999",
+            background: activeTool === t.key ? colors.accent : colors.surface,
+            color: activeTool === t.key ? "#fff" : colors.textMuted,
+            borderColor: activeTool === t.key ? colors.accent : colors.border,
           }}
         >
+          {t.icon}
           {t.label}
         </button>
       ))}
@@ -62,11 +82,14 @@ export function PlanToolbar() {
             onClick={() => handleCategoryClick(cat)}
             style={{
               ...btn,
-              background: activeCategoryTool(cat) ? "#4a9eff" : openCategory === cat ? "#333" : "#222",
-              color: activeCategoryTool(cat) ? "#fff" : openCategory === cat ? "#fff" : "#999",
+              background: activeCategoryTool(cat) ? colors.accent : openCategory === cat ? colors.surfaceHover : colors.surface,
+              color: activeCategoryTool(cat) ? "#fff" : openCategory === cat ? colors.text : colors.textMuted,
+              borderColor: activeCategoryTool(cat) ? colors.accent : openCategory === cat ? colors.border : colors.border,
             }}
           >
-            {categoryLabels[cat]} ▾
+            {categoryIcons[cat]}
+            {categoryLabels[cat]}
+            <ChevronDownIcon size={12} />
           </button>
 
           {openCategory === cat && (
@@ -77,8 +100,8 @@ export function PlanToolbar() {
                   onClick={() => handleToolSelect(entry.tool)}
                   style={{
                     ...dropdownItem,
-                    background: activeTool === entry.tool ? "#4a9eff" : "transparent",
-                    color: activeTool === entry.tool ? "#fff" : "#ccc",
+                    background: activeTool === entry.tool ? colors.accent : "transparent",
+                    color: activeTool === entry.tool ? "#fff" : colors.text,
                   }}
                 >
                   <span
@@ -86,11 +109,10 @@ export function PlanToolbar() {
                       display: "inline-block",
                       width: 8,
                       height: 8,
-                      borderRadius: entry.geometry === "point" ? "50%" : 1,
+                      borderRadius: entry.geometry === "point" ? "50%" : 2,
                       background: entry.defaultStyle.fill === "transparent"
                         ? entry.defaultStyle.stroke
                         : entry.defaultStyle.fill,
-                      marginRight: 8,
                       flexShrink: 0,
                     }}
                   />
@@ -101,6 +123,20 @@ export function PlanToolbar() {
           )}
         </div>
       ))}
+
+      {/* Annotation tool */}
+      <button
+        onClick={() => handleToolSelect("drawAnnotation")}
+        style={{
+          ...btn,
+          background: activeTool === "drawAnnotation" ? colors.accent : colors.surface,
+          color: activeTool === "drawAnnotation" ? "#fff" : colors.textMuted,
+          borderColor: activeTool === "drawAnnotation" ? colors.accent : colors.border,
+        }}
+      >
+        <TextIcon size={14} />
+        Note
+      </button>
     </div>
   );
 }
@@ -111,49 +147,58 @@ const container: React.CSSProperties = {
   left: "50%",
   transform: "translateX(-50%)",
   display: "flex",
-  gap: 4,
+  gap: spacing.sm,
   zIndex: 100,
   pointerEvents: "auto",
 };
 
 const btn: React.CSSProperties = {
-  padding: "6px 14px",
-  border: "none",
-  borderRadius: 4,
+  padding: `${spacing.sm + 2}px ${spacing.lg}px`,
+  border: `1px solid ${colors.border}`,
+  borderRadius: radius.sm,
   cursor: "pointer",
-  fontFamily: "monospace",
-  fontSize: 12,
+  fontFamily: font.family,
+  fontSize: font.size.sm,
+  fontWeight: font.weight.medium,
   whiteSpace: "nowrap",
+  display: "flex",
+  alignItems: "center",
+  gap: spacing.sm + 1,
+  transition,
+  lineHeight: 1,
 };
 
 const separator: React.CSSProperties = {
   width: 1,
-  background: "#444",
-  margin: "0 4px",
+  background: colors.border,
+  margin: `0 ${spacing.sm}px`,
 };
 
 const dropdown: React.CSSProperties = {
   position: "absolute",
   top: "100%",
   left: 0,
-  marginTop: 4,
-  background: "#222",
-  borderRadius: 6,
-  padding: 4,
-  minWidth: 150,
+  marginTop: spacing.sm,
+  background: colors.surface,
+  border: `1px solid ${colors.border}`,
+  borderRadius: radius.md,
+  padding: spacing.sm,
+  minWidth: 160,
   zIndex: 200,
-  boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
+  boxShadow: shadow.md,
 };
 
 const dropdownItem: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
   width: "100%",
-  padding: "6px 10px",
+  padding: `${spacing.sm + 2}px ${spacing.md}px`,
   border: "none",
-  borderRadius: 3,
+  borderRadius: radius.sm,
   cursor: "pointer",
-  fontFamily: "monospace",
-  fontSize: 12,
+  fontFamily: font.family,
+  fontSize: font.size.md,
   textAlign: "left",
+  gap: spacing.md,
+  transition,
 };

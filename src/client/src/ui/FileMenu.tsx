@@ -1,11 +1,12 @@
 import { useRef } from "react";
 import { useLandscapeStore } from "../store/landscapeStore";
 import type { ProjectState } from "../types/landscape";
+import { colors, font, spacing, radius, transition } from "./theme";
+import { FileIcon, DownloadIcon, FolderOpenIcon } from "./icons";
 
 export function FileMenu() {
   const project = useLandscapeStore((s) => s.project);
   const loadProject = useLandscapeStore((s) => s.loadProject);
-  const initProject = useLandscapeStore((s) => s.initProject);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleExport = () => {
@@ -39,20 +40,27 @@ export function FileMenu() {
       }
     };
     reader.readAsText(file);
-    // Reset so same file can be re-imported
     e.target.value = "";
   };
 
   const handleNew = () => {
-    // Reset to setup modal by clearing persisted state
     useLandscapeStore.setState({ project: null });
   };
 
   return (
     <div style={container}>
-      <button onClick={handleNew} style={btn}>New</button>
-      <button onClick={handleExport} style={btn}>Export</button>
-      <button onClick={handleImport} style={btn}>Import</button>
+      <button onClick={handleNew} style={btn} title="New Project">
+        <FileIcon size={13} />
+        New
+      </button>
+      <button onClick={handleExport} style={btn} title="Export Project JSON">
+        <DownloadIcon size={13} />
+        Save
+      </button>
+      <button onClick={handleImport} style={btn} title="Import Project JSON">
+        <FolderOpenIcon size={13} />
+        Open
+      </button>
       <input
         ref={fileInputRef}
         type="file"
@@ -69,18 +77,24 @@ const container: React.CSSProperties = {
   top: 8,
   left: 8,
   display: "flex",
-  gap: 4,
+  gap: spacing.sm,
   zIndex: 100,
   pointerEvents: "auto",
 };
 
 const btn: React.CSSProperties = {
-  padding: "6px 10px",
-  border: "none",
-  borderRadius: 4,
+  padding: `${spacing.sm + 2}px ${spacing.lg}px`,
+  border: `1px solid ${colors.border}`,
+  borderRadius: radius.sm,
   cursor: "pointer",
-  fontFamily: "monospace",
-  fontSize: 11,
-  background: "#222",
-  color: "#999",
+  fontFamily: font.family,
+  fontSize: font.size.sm,
+  fontWeight: font.weight.medium,
+  background: colors.surface,
+  color: colors.textMuted,
+  display: "flex",
+  alignItems: "center",
+  gap: spacing.sm + 1,
+  transition,
+  lineHeight: 1,
 };

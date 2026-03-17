@@ -229,6 +229,20 @@ export const objectRegistry: Record<ObjectType, ObjectRegistryEntry> = {
     },
     defaultProperties: {},
   },
+  annotation: {
+    type: "annotation",
+    category: "structure",
+    geometry: "point",
+    label: "Annotation",
+    tool: "drawAnnotation",
+    defaultStyle: {
+      stroke: "transparent",
+      strokeWidth: 0,
+      fill: "transparent",
+      opacity: 1,
+    },
+    defaultProperties: { text: "Note", fontSize: 14 },
+  },
 };
 
 /** Get the ObjectType from a PlanTool (e.g. "drawFence" → "fence") */

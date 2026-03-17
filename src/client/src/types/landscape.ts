@@ -13,7 +13,8 @@ export type ObjectType =
   | "lawn"
   | "pond"
   | "pool"
-  | "irrigation";
+  | "irrigation"
+  | "annotation";
 
 export type GeometryMode = "polygon" | "line" | "point";
 export type ObjectCategory = "structure" | "hardscape" | "softscape" | "water";
@@ -38,7 +39,8 @@ export type PlanTool =
   | "drawLawn"
   | "drawPond"
   | "drawPool"
-  | "drawIrrigation";
+  | "drawIrrigation"
+  | "drawAnnotation";
 
 export interface ObjectStyle {
   fill?: string;

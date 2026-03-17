@@ -52,7 +52,7 @@ export function LabelLayer({ scale, offsetX, offsetY }: Props) {
               text={labelText}
               fill="rgba(255,255,255,0.7)"
               fontSize={10}
-              fontFamily="monospace"
+              fontFamily="Inter, sans-serif"
               offsetX={labelText.length * 3}
             />
           );

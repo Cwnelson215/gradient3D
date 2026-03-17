@@ -1,31 +1,16 @@
-export function ExportButtons() {
-  const handleExport2D = () => {
-    const stage = document.querySelector(".konvajs-content canvas") as HTMLCanvasElement;
-    if (!stage) return;
-    const url = stage.toDataURL();
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "landscape-2d.png";
-    a.click();
-  };
+import { colors, font, spacing, radius, transition } from "./theme";
+import { DownloadIcon } from "./icons";
 
-  const handleExport3D = () => {
-    const canvas = document.querySelector("canvas[data-engine]") as HTMLCanvasElement;
-    if (!canvas) return;
-    const url = canvas.toDataURL("image/png");
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "landscape-3d.png";
-    a.click();
-  };
+interface Props {
+  onExportClick: () => void;
+}
 
+export function ExportButtons({ onExportClick }: Props) {
   return (
     <div style={container}>
-      <button onClick={handleExport2D} style={btn} title="Export 2D view as PNG">
-        2D PNG
-      </button>
-      <button onClick={handleExport3D} style={btn} title="Export 3D view as PNG">
-        3D PNG
+      <button onClick={onExportClick} style={btn} title="Export plan as image">
+        <DownloadIcon size={13} />
+        Export
       </button>
     </div>
   );
@@ -33,21 +18,27 @@ export function ExportButtons() {
 
 const container: React.CSSProperties = {
   position: "absolute",
-  bottom: 8,
-  left: 8,
+  top: 8,
+  right: 8,
   display: "flex",
-  gap: 4,
+  gap: spacing.sm,
   zIndex: 100,
   pointerEvents: "auto",
 };
 
 const btn: React.CSSProperties = {
-  padding: "6px 10px",
-  border: "none",
-  borderRadius: 4,
+  padding: `${spacing.sm + 2}px ${spacing.lg}px`,
+  border: `1px solid ${colors.border}`,
+  borderRadius: radius.sm,
   cursor: "pointer",
-  fontFamily: "monospace",
-  fontSize: 11,
-  background: "#222",
-  color: "#999",
+  fontFamily: font.family,
+  fontSize: font.size.sm,
+  fontWeight: font.weight.medium,
+  background: colors.surface,
+  color: colors.textMuted,
+  display: "flex",
+  alignItems: "center",
+  gap: spacing.sm + 1,
+  transition,
+  lineHeight: 1,
 };

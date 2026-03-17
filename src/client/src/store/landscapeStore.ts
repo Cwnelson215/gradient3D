@@ -25,6 +25,14 @@ interface LandscapeStore {
   undoStack: ProjectState[];
   redoStack: ProjectState[];
 
+  // Clipboard (not persisted)
+  clipboard: LandscapeObject | null;
+
+  // View state (shared across components)
+  viewScale: number;
+  viewOffset: { x: number; y: number };
+  cursorWorldPos: { x: number; y: number } | null;
+
   initProject: (config: PropertyConfig) => void;
   loadProject: (project: ProjectState) => void;
   setViewMode: (mode: ViewMode) => void;
@@ -41,6 +49,21 @@ interface LandscapeStore {
   ) => string;
   updateObject: (id: string, updates: Partial<LandscapeObject>) => void;
   removeObject: (id: string) => void;
+
+  // Visibility/lock
+  toggleObjectVisibility: (id: string) => void;
+  toggleObjectLock: (id: string) => void;
+  reorderObject: (id: string, newZIndex: number) => void;
+
+  // Copy/paste/duplicate
+  copyObject: (id: string) => void;
+  pasteObject: () => void;
+  duplicateObject: (id: string) => void;
+
+  // View controls
+  setViewScale: (scale: number) => void;
+  setViewOffset: (offset: { x: number; y: number }) => void;
+  setCursorWorldPos: (pos: { x: number; y: number } | null) => void;
 
   undo: () => void;
   redo: () => void;
@@ -62,6 +85,10 @@ export const useLandscapeStore = create<LandscapeStore>()(
       selectedObjectId: null,
       undoStack: [],
       redoStack: [],
+      clipboard: null,
+      viewScale: 1,
+      viewOffset: { x: 40, y: 40 },
+      cursorWorldPos: null,
 
       initProject: (config) => {
         set({
@@ -148,6 +175,97 @@ export const useLandscapeStore = create<LandscapeStore>()(
           })
         );
       },
+
+      toggleObjectVisibility: (id) => {
+        set(
+          produce((state: LandscapeStore) => {
+            if (!state.project) return;
+            const obj = state.project.objects.find((o) => o.id === id);
+            if (obj) obj.visible = !obj.visible;
+          })
+        );
+      },
+
+      toggleObjectLock: (id) => {
+        set(
+          produce((state: LandscapeStore) => {
+            if (!state.project) return;
+            const obj = state.project.objects.find((o) => o.id === id);
+            if (obj) obj.locked = !obj.locked;
+          })
+        );
+      },
+
+      reorderObject: (id, newZIndex) => {
+        set(
+          produce((state: LandscapeStore) => {
+            if (!state.project) return;
+            const obj = state.project.objects.find((o) => o.id === id);
+            if (obj) obj.zIndex = newZIndex;
+          })
+        );
+      },
+
+      copyObject: (id) => {
+        const obj = get().project?.objects.find((o) => o.id === id);
+        if (obj) {
+          set({ clipboard: JSON.parse(JSON.stringify(obj)) });
+        }
+      },
+
+      pasteObject: () => {
+        const { clipboard, project } = get();
+        if (!clipboard || !project) return;
+        const newObj: LandscapeObject = {
+          ...JSON.parse(JSON.stringify(clipboard)),
+          id: uuidv4(),
+          position: {
+            x: clipboard.position.x + 2,
+            y: clipboard.position.y + 2,
+          },
+          zIndex: project.objects.length + 1,
+          name: `${clipboard.name} copy`,
+        };
+        set(
+          produce((state: LandscapeStore) => {
+            snapshot(state);
+            if (state.project) {
+              state.project.objects.push(newObj);
+              state.selectedObjectId = newObj.id;
+            }
+          })
+        );
+      },
+
+      duplicateObject: (id) => {
+        const { project } = get();
+        if (!project) return;
+        const obj = project.objects.find((o) => o.id === id);
+        if (!obj) return;
+        const newObj: LandscapeObject = {
+          ...JSON.parse(JSON.stringify(obj)),
+          id: uuidv4(),
+          position: {
+            x: obj.position.x + 2,
+            y: obj.position.y + 2,
+          },
+          zIndex: project.objects.length + 1,
+          name: `${obj.name} copy`,
+        };
+        set(
+          produce((state: LandscapeStore) => {
+            snapshot(state);
+            if (state.project) {
+              state.project.objects.push(newObj);
+              state.selectedObjectId = newObj.id;
+            }
+          })
+        );
+      },
+
+      setViewScale: (scale) => set({ viewScale: scale }),
+      setViewOffset: (offset) => set({ viewOffset: offset }),
+      setCursorWorldPos: (pos) => set({ cursorWorldPos: pos }),
 
       undo: () => {
         set(

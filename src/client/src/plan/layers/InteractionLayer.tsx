@@ -81,7 +81,7 @@ function PolygonPreview({
             text={`${length.toFixed(1)} ft`}
             fill="#4a9eff"
             fontSize={13}
-            fontFamily="monospace"
+            fontFamily="Inter, sans-serif"
             fontStyle="bold"
           />
         );
@@ -134,7 +134,7 @@ function LinePreview({
             text={`${length.toFixed(1)} ft`}
             fill="#ff9e4a"
             fontSize={13}
-            fontFamily="monospace"
+            fontFamily="Inter, sans-serif"
             fontStyle="bold"
           />
         );
@@ -213,7 +213,7 @@ function MeasurePreview({
           text={`${dist.toFixed(1)} ft`}
           fill="#ff4a4a"
           fontSize={13}
-          fontFamily="monospace"
+          fontFamily="Inter, sans-serif"
           fontStyle="bold"
         />
       )}

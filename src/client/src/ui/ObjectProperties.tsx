@@ -1,11 +1,14 @@
 import { useLandscapeStore } from "../store/landscapeStore";
 import { polygonArea, polylineLength } from "../utils/coordinates";
+import { colors, font, spacing, radius, panelStyle, inputStyle, buttonStyle } from "./theme";
+import { TrashIcon, CopyIcon } from "./icons";
 
 export function ObjectProperties() {
   const selectedId = useLandscapeStore((s) => s.selectedObjectId);
   const objects = useLandscapeStore((s) => s.project?.objects ?? []);
   const updateObject = useLandscapeStore((s) => s.updateObject);
   const removeObject = useLandscapeStore((s) => s.removeObject);
+  const duplicateObject = useLandscapeStore((s) => s.duplicateObject);
 
   const obj = objects.find((o) => o.id === selectedId);
   if (!obj) return null;
@@ -27,9 +30,12 @@ export function ObjectProperties() {
     updateObject(obj.id, { properties: { ...obj.properties, [key]: value } });
   };
 
+  const numVal = (e: React.ChangeEvent<HTMLInputElement>) =>
+    e.target.value === "" ? "" : Number(e.target.value);
+
   return (
     <div style={panel}>
-      <h3 style={{ margin: "0 0 10px", color: "#fff", fontSize: 14 }}>
+      <h3 style={{ margin: `0 0 ${spacing.lg}px`, color: colors.text, fontSize: font.size.xl, fontWeight: font.weight.semibold, fontFamily: font.family }}>
         Properties
       </h3>
 
@@ -44,13 +50,27 @@ export function ObjectProperties() {
 
       <div style={fieldGroup}>
         <label style={labelStyle}>Type</label>
-        <div style={{ color: "#ccc", fontSize: 12 }}>{obj.type}</div>
+        <div style={{ color: colors.text, fontSize: font.size.md, fontFamily: font.family }}>{obj.type}</div>
       </div>
 
-      <div style={fieldGroup}>
-        <label style={labelStyle}>{measureLabel}</label>
-        <div style={{ color: "#ccc", fontSize: 12 }}>{measurement}</div>
-      </div>
+      {obj.type === "annotation" && (
+        <div style={fieldGroup}>
+          <label style={labelStyle}>Text</label>
+          <textarea
+            value={(obj.properties.text as string) ?? ""}
+            onChange={(e) => updateProp("text", e.target.value)}
+            style={{ ...input, minHeight: 60, resize: "vertical" }}
+            rows={3}
+          />
+        </div>
+      )}
+
+      {obj.type !== "annotation" && (
+        <div style={fieldGroup}>
+          <label style={labelStyle}>{measureLabel}</label>
+          <div style={{ color: colors.text, fontSize: font.size.md, fontFamily: font.family }}>{measurement}</div>
+        </div>
+      )}
 
       <div style={fieldGroup}>
         <label style={labelStyle}>Fill Color</label>
@@ -60,7 +80,7 @@ export function ObjectProperties() {
           onChange={(e) =>
             updateObject(obj.id, { style: { ...obj.style, fill: e.target.value } })
           }
-          style={{ width: "100%", height: 28, border: "none", cursor: "pointer" }}
+          style={{ width: "100%", height: 28, border: "none", cursor: "pointer", borderRadius: radius.sm }}
         />
       </div>
 
@@ -72,7 +92,7 @@ export function ObjectProperties() {
           onChange={(e) =>
             updateObject(obj.id, { style: { ...obj.style, stroke: e.target.value } })
           }
-          style={{ width: "100%", height: 28, border: "none", cursor: "pointer" }}
+          style={{ width: "100%", height: 28, border: "none", cursor: "pointer", borderRadius: radius.sm }}
         />
       </div>
 
@@ -81,14 +101,14 @@ export function ObjectProperties() {
         <input
           type="number"
           value={Math.round(obj.rotation * (180 / Math.PI))}
-          onChange={(e) =>
-            updateObject(obj.id, { rotation: Number(e.target.value) * (Math.PI / 180) })
-          }
+          onChange={(e) => {
+            const v = numVal(e);
+            if (v !== "") updateObject(obj.id, { rotation: v * (Math.PI / 180) });
+          }}
           style={input}
         />
       </div>
 
-      {/* Type-specific properties */}
       {(obj.type === "tree" || obj.type === "shrub") && (
         <>
           <div style={fieldGroup}>
@@ -96,9 +116,10 @@ export function ObjectProperties() {
             <input
               type="number"
               value={obj.radius ?? (obj.properties.radius as number) ?? 3}
-              onChange={(e) =>
-                updateObject(obj.id, { radius: Number(e.target.value) })
-              }
+              onChange={(e) => {
+                const v = numVal(e);
+                if (v !== "") updateObject(obj.id, { radius: v });
+              }}
               style={input}
               min={1}
               step={0.5}
@@ -109,7 +130,7 @@ export function ObjectProperties() {
             <input
               type="number"
               value={(obj.properties.height as number) ?? 10}
-              onChange={(e) => updateProp("height", Number(e.target.value))}
+              onChange={(e) => updateProp("height", numVal(e))}
               style={input}
               min={1}
             />
@@ -138,7 +159,7 @@ export function ObjectProperties() {
             <input
               type="number"
               value={(obj.properties.height as number) ?? 6}
-              onChange={(e) => updateProp("height", Number(e.target.value))}
+              onChange={(e) => updateProp("height", numVal(e))}
               style={input}
               min={1}
             />
@@ -164,7 +185,7 @@ export function ObjectProperties() {
             <input
               type="number"
               value={(obj.properties.height as number) ?? 3}
-              onChange={(e) => updateProp("height", Number(e.target.value))}
+              onChange={(e) => updateProp("height", numVal(e))}
               style={input}
               min={1}
             />
@@ -174,7 +195,7 @@ export function ObjectProperties() {
             <input
               type="number"
               value={(obj.properties.width as number) ?? 1}
-              onChange={(e) => updateProp("width", Number(e.target.value))}
+              onChange={(e) => updateProp("width", numVal(e))}
               style={input}
               min={0.5}
               step={0.5}
@@ -189,62 +210,56 @@ export function ObjectProperties() {
           <input
             type="number"
             value={(obj.properties.depth as number) ?? 6}
-            onChange={(e) => updateProp("depth", Number(e.target.value))}
+            onChange={(e) => updateProp("depth", numVal(e))}
             style={input}
             min={2}
           />
         </div>
       )}
 
-      <button onClick={() => removeObject(obj.id)} style={deleteBtn}>
-        Delete
-      </button>
+      <div style={{ display: "flex", gap: spacing.sm, marginTop: spacing.md }}>
+        <button
+          onClick={() => duplicateObject(obj.id)}
+          style={{ ...buttonStyle("default"), flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}
+          title="Duplicate (Ctrl+D)"
+        >
+          <CopyIcon size={13} />
+          Duplicate
+        </button>
+        <button
+          onClick={() => removeObject(obj.id)}
+          style={{ ...buttonStyle("danger"), flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}
+        >
+          <TrashIcon size={13} />
+          Delete
+        </button>
+      </div>
     </div>
   );
 }
 
 const panel: React.CSSProperties = {
+  ...panelStyle(),
   position: "absolute",
   right: 8,
   top: 48,
-  width: 200,
-  background: "#1a1a2e",
-  borderRadius: 8,
-  padding: 14,
-  fontFamily: "monospace",
+  width: 220,
+  padding: spacing.xl,
   pointerEvents: "auto",
   zIndex: 100,
   maxHeight: "calc(100vh - 80px)",
   overflowY: "auto",
 };
 
-const fieldGroup: React.CSSProperties = { marginBottom: 10 };
+const fieldGroup: React.CSSProperties = { marginBottom: spacing.lg };
 const labelStyle: React.CSSProperties = {
   display: "block",
-  color: "#888",
-  fontSize: 10,
-  marginBottom: 2,
+  color: colors.textMuted,
+  fontSize: font.size.xs,
+  fontFamily: font.family,
+  fontWeight: font.weight.medium,
+  marginBottom: spacing.xs,
+  textTransform: "uppercase",
+  letterSpacing: "0.5px",
 };
-const input: React.CSSProperties = {
-  width: "100%",
-  padding: "4px 6px",
-  background: "#16213e",
-  border: "1px solid #333",
-  borderRadius: 4,
-  color: "#fff",
-  fontSize: 12,
-  fontFamily: "monospace",
-  boxSizing: "border-box",
-};
-const deleteBtn: React.CSSProperties = {
-  width: "100%",
-  padding: "6px",
-  background: "#c0392b",
-  border: "none",
-  borderRadius: 4,
-  color: "#fff",
-  fontSize: 12,
-  fontFamily: "monospace",
-  cursor: "pointer",
-  marginTop: 4,
-};
+const input: React.CSSProperties = inputStyle();

@@ -6,6 +6,7 @@ import { GridLayer } from "./layers/GridLayer";
 import { ObjectLayer } from "./layers/ObjectLayer";
 import { InteractionLayer } from "./layers/InteractionLayer";
 import { LabelLayer } from "./layers/LabelLayer";
+import { SnapGuideLayer } from "./tools/SnapGuides";
 import {
   handleDrawClick,
   handleDrawMouseMove,
@@ -34,9 +35,10 @@ import {
   type MeasureState,
 } from "./tools/MeasureTool";
 import { hitTest, startDrag, updateDrag, type DragState } from "./tools/SelectTool";
-import { PIXELS_PER_FOOT } from "../utils/coordinates";
+import { PIXELS_PER_FOOT, canvasToWorld } from "../utils/coordinates";
 import { mergeWithOverlapping } from "../utils/polygonMerge";
 import { objectRegistry, toolToObjectType } from "../types/objectRegistry";
+import { computeSnapGuides, applySnap, type SnapGuide } from "./tools/SnapGuides";
 import type Konva from "konva";
 
 export function PlanView() {
@@ -48,17 +50,23 @@ export function PlanView() {
   const removeObject = useLandscapeStore((s) => s.removeObject);
   const objects = useLandscapeStore((s) => s.project?.objects ?? []);
 
+  // View state from store
+  const viewScale = useLandscapeStore((s) => s.viewScale);
+  const offset = useLandscapeStore((s) => s.viewOffset);
+  const setViewScale = useLandscapeStore((s) => s.setViewScale);
+  const setOffset = useLandscapeStore((s) => s.setViewOffset);
+  const setCursorWorldPos = useLandscapeStore((s) => s.setCursorWorldPos);
+
   const stageRef = useRef<Konva.Stage>(null);
 
   const [dims, setDims] = useState({ w: 800, h: 600 });
-  const [viewScale, setViewScale] = useState(1);
-  const [offset, setOffset] = useState({ x: 40, y: 40 });
   const [drawState, setDrawState] = useState<DrawState>(initialDrawState);
   const [lineDrawState, setLineDrawState] = useState<LineDrawState>(initialLineDrawState);
   const [pointDrawState, setPointDrawState] = useState<PointDrawState>(initialPointDrawState);
   const [measureState, setMeasureState] = useState<MeasureState>(initialMeasureState);
   const [dragState, setDragState] = useState<DragState | null>(null);
   const [isPanning, setIsPanning] = useState(false);
+  const [snapGuides, setSnapGuides] = useState<SnapGuide[]>([]);
   const panStart = useRef<{ x: number; y: number; ox: number; oy: number } | null>(null);
 
   // Determine geometry mode from active tool
@@ -71,6 +79,7 @@ export function PlanView() {
     setLineDrawState(initialLineDrawState);
     setPointDrawState(initialPointDrawState);
     setMeasureState(initialMeasureState);
+    setSnapGuides([]);
   }, [activeTool]);
 
   // Keyboard handler for line tool (Enter/Escape) and undo/redo
@@ -163,6 +172,19 @@ export function PlanView() {
   };
 
   const handleClick = (e: KonvaEventObject<MouseEvent>) => {
+    // Annotation tool: single click to place
+    if (activeTool === "drawAnnotation") {
+      const stage = e.target.getStage();
+      const pos = stage?.getPointerPosition();
+      if (!pos) return;
+      const worldX = (pos.x - offset.x) / (PIXELS_PER_FOOT * viewScale);
+      const worldY = (pos.y - offset.y) / (PIXELS_PER_FOOT * viewScale);
+      const count = objects.filter((o) => o.type === "annotation").length + 1;
+      const id = addObject("annotation", `Note ${count}`, [[worldX, worldY]], undefined, { text: "Note" });
+      selectObject(id);
+      return;
+    }
+
     if (activeTool === "measure") {
       setMeasureState(handleMeasureClick(e, measureState, offset.x, offset.y, viewScale, property.gridSpacingFt));
       return;
@@ -228,7 +250,7 @@ export function PlanView() {
       const id = hitTest(e, objects, offset.x, offset.y, viewScale);
       if (id) {
         const obj = objects.find((o) => o.id === id);
-        if (obj) {
+        if (obj && !obj.locked) {
           const drag = startDrag(e, obj, offset.x, offset.y, viewScale);
           if (drag) setDragState(drag);
         }
@@ -237,9 +259,15 @@ export function PlanView() {
   };
 
   const handleMouseMove = (e: KonvaEventObject<MouseEvent>) => {
+    // Always update cursor world position
+    const stage = e.target.getStage();
+    const pos = stage?.getPointerPosition();
+    if (pos) {
+      const world = canvasToWorld(pos.x, pos.y, offset.x, offset.y, viewScale);
+      setCursorWorldPos(world);
+    }
+
     if (isPanning && panStart.current) {
-      const stage = e.target.getStage();
-      const pos = stage?.getPointerPosition();
       if (pos) {
         setOffset({
           x: panStart.current.ox + (pos.x - panStart.current.x),
@@ -252,7 +280,17 @@ export function PlanView() {
     if (dragState) {
       const newPos = updateDrag(e, dragState, offset.x, offset.y, viewScale);
       if (newPos) {
-        updateObject(dragState.objectId, { position: newPos });
+        // Compute snap guides during drag
+        const movingObj = objects.find((o) => o.id === dragState.objectId);
+        if (movingObj) {
+          const tempObj = { ...movingObj, position: newPos };
+          const guides = computeSnapGuides(tempObj, objects, 8 / (PIXELS_PER_FOOT * viewScale));
+          const snapped = applySnap(newPos, guides);
+          setSnapGuides(guides);
+          updateObject(dragState.objectId, { position: snapped });
+        } else {
+          updateObject(dragState.objectId, { position: newPos });
+        }
       }
       return;
     }
@@ -282,6 +320,7 @@ export function PlanView() {
     setIsPanning(false);
     panStart.current = null;
     setDragState(null);
+    setSnapGuides([]);
 
     if (geometryMode === "point" && objectType && pointDrawState.dragging) {
       const defaultRadius = (objectRegistry[objectType].defaultProperties.radius as number) ?? 3;
@@ -295,10 +334,14 @@ export function PlanView() {
     }
   };
 
-  const isDrawing = geometryMode !== null || activeTool === "measure";
+  const handleMouseLeave = () => {
+    setCursorWorldPos(null);
+  };
+
+  const isDrawing = geometryMode !== null || activeTool === "measure" || activeTool === "drawAnnotation";
 
   return (
-    <div ref={measuredRef} style={{ width: "100%", height: "100%", background: "#111" }}>
+    <div ref={measuredRef} style={{ width: "100%", height: "calc(100% - 28px)", background: "#0f0f14" }}>
       <Stage
         ref={stageRef}
         width={dims.w}
@@ -309,6 +352,7 @@ export function PlanView() {
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseLeave}
         style={{
           cursor:
             activeTool === "pan"
@@ -347,6 +391,7 @@ export function PlanView() {
             offsetX={offset.x}
             offsetY={offset.y}
           />
+          <SnapGuideLayer guides={snapGuides} scale={viewScale} offsetX={offset.x} offsetY={offset.y} />
         </Layer>
       </Stage>
     </div>
