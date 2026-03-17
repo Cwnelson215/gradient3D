@@ -5,6 +5,8 @@ import { colors, font, spacing, radius, overlayStyle, modalStyle, fieldLabelStyl
 import { DownloadIcon, XIcon } from "./icons";
 import { useToast } from "./Toast";
 
+type ExportFormat = "png" | "glb" | "obj";
+
 interface Props {
   onClose: () => void;
 }
@@ -14,6 +16,7 @@ export function ExportModal({ onClose }: Props) {
   const property = useLandscapeStore((s) => s.project?.property);
   const showToast = useToast((s) => s.showToast);
 
+  const [format, setFormat] = useState<ExportFormat>("png");
   const [projectName, setProjectName] = useState("Landscape Plan");
   const [background, setBackground] = useState<"dark" | "white">("dark");
   const [showTitleBlock, setShowTitleBlock] = useState(true);
@@ -24,10 +27,36 @@ export function ExportModal({ onClose }: Props) {
   const [exporting, setExporting] = useState(false);
 
   const summary = computeMaterialSummary(objects);
+  const slug = projectName.replace(/\s+/g, "-").toLowerCase();
 
-  const handleExport = () => {
+  const handleExport = async () => {
     setExporting(true);
 
+    try {
+      if (format === "glb") {
+        if (!property) return;
+        const { exportGlb } = await import("../export/three/exportGltf");
+        await exportGlb(objects, property, slug);
+        showToast("GLB export complete", "success");
+        onClose();
+      } else if (format === "obj") {
+        if (!property) return;
+        const { exportObj } = await import("../export/three/exportObj");
+        await exportObj(objects, property, slug);
+        showToast("OBJ+MTL export complete", "success");
+        onClose();
+      } else {
+        handlePngExport();
+      }
+    } catch (err) {
+      console.error("Export failed:", err);
+      showToast("Export failed", "error");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handlePngExport = () => {
     // Use requestAnimationFrame to show loading state
     requestAnimationFrame(() => {
       const canvas = document.querySelector(".konvajs-content canvas") as HTMLCanvasElement;
@@ -107,7 +136,7 @@ export function ExportModal({ onClose }: Props) {
       const url = exportCanvas.toDataURL("image/png");
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${projectName.replace(/\s+/g, "-").toLowerCase()}.png`;
+      a.download = `${slug}.png`;
       a.click();
 
       setExporting(false);
@@ -115,6 +144,11 @@ export function ExportModal({ onClose }: Props) {
       onClose();
     });
   };
+
+  const exportLabel =
+    format === "png" ? "Export PNG" :
+    format === "glb" ? "Export GLB" :
+    "Export OBJ+MTL";
 
   return (
     <div style={overlayStyle()} onClick={onClose}>
@@ -128,68 +162,95 @@ export function ExportModal({ onClose }: Props) {
           Export Plan
         </h2>
 
+        {/* Format selector */}
         <div style={fieldGroup}>
-          <label style={label}>Project Name</label>
-          <input value={projectName} onChange={(e) => setProjectName(e.target.value)} style={input} />
-        </div>
-
-        <div style={fieldGroup}>
-          <label style={label}>Background</label>
+          <label style={label}>Format</label>
           <div style={{ display: "flex", gap: spacing.md }}>
-            <button
-              onClick={() => setBackground("dark")}
-              style={{ ...optionBtn, ...(background === "dark" ? activeOption : {}) }}
-            >
-              Dark
-            </button>
-            <button
-              onClick={() => setBackground("white")}
-              style={{ ...optionBtn, ...(background === "white" ? activeOption : {}) }}
-            >
-              White
-            </button>
-          </div>
-        </div>
-
-        <div style={fieldGroup}>
-          <label style={label}>Resolution</label>
-          <div style={{ display: "flex", gap: spacing.md }}>
-            {[1, 2, 3].map((r) => (
+            {(["png", "glb", "obj"] as ExportFormat[]).map((f) => (
               <button
-                key={r}
-                onClick={() => setResolution(r)}
-                style={{ ...optionBtn, ...(resolution === r ? activeOption : {}) }}
+                key={f}
+                onClick={() => setFormat(f)}
+                style={{ ...optionBtn, ...(format === f ? activeOption : {}) }}
               >
-                {r}x
+                {f === "png" ? "PNG" : f === "glb" ? "GLB" : "OBJ+MTL"}
               </button>
             ))}
           </div>
         </div>
 
         <div style={fieldGroup}>
-          <label style={label}>Include</label>
-          <div style={{ display: "flex", flexDirection: "column", gap: spacing.sm }}>
-            <Toggle checked={showTitleBlock} onChange={setShowTitleBlock} label="Title Block" />
-            <Toggle checked={showScaleBar} onChange={setShowScaleBar} label="Scale Bar" />
-            <Toggle checked={showNorthArrow} onChange={setShowNorthArrow} label="North Arrow" />
-            <Toggle checked={showLegend} onChange={setShowLegend} label="Material Legend" />
-          </div>
+          <label style={label}>Project Name</label>
+          <input value={projectName} onChange={(e) => setProjectName(e.target.value)} style={input} />
         </div>
 
-        {showLegend && summary.length > 0 && (
-          <div style={fieldGroup}>
-            <label style={label}>Material Summary</label>
-            <div style={{ fontSize: font.size.xs, color: colors.textMuted, fontFamily: font.family }}>
-              {summary.map((item) => (
-                <div key={item.type} style={{ display: "flex", justifyContent: "space-between", padding: `${spacing.xs}px 0` }}>
-                  <span>{item.label} ({item.count})</span>
-                  <span>
-                    {item.totalArea !== undefined && `${item.totalArea.toFixed(0)} sq ft`}
-                    {item.totalLength !== undefined && `${item.totalLength.toFixed(0)} ft`}
-                  </span>
-                </div>
-              ))}
+        {format === "png" && (
+          <>
+            <div style={fieldGroup}>
+              <label style={label}>Background</label>
+              <div style={{ display: "flex", gap: spacing.md }}>
+                <button
+                  onClick={() => setBackground("dark")}
+                  style={{ ...optionBtn, ...(background === "dark" ? activeOption : {}) }}
+                >
+                  Dark
+                </button>
+                <button
+                  onClick={() => setBackground("white")}
+                  style={{ ...optionBtn, ...(background === "white" ? activeOption : {}) }}
+                >
+                  White
+                </button>
+              </div>
             </div>
+
+            <div style={fieldGroup}>
+              <label style={label}>Resolution</label>
+              <div style={{ display: "flex", gap: spacing.md }}>
+                {[1, 2, 3].map((r) => (
+                  <button
+                    key={r}
+                    onClick={() => setResolution(r)}
+                    style={{ ...optionBtn, ...(resolution === r ? activeOption : {}) }}
+                  >
+                    {r}x
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={fieldGroup}>
+              <label style={label}>Include</label>
+              <div style={{ display: "flex", flexDirection: "column", gap: spacing.sm }}>
+                <Toggle checked={showTitleBlock} onChange={setShowTitleBlock} label="Title Block" />
+                <Toggle checked={showScaleBar} onChange={setShowScaleBar} label="Scale Bar" />
+                <Toggle checked={showNorthArrow} onChange={setShowNorthArrow} label="North Arrow" />
+                <Toggle checked={showLegend} onChange={setShowLegend} label="Material Legend" />
+              </div>
+            </div>
+
+            {showLegend && summary.length > 0 && (
+              <div style={fieldGroup}>
+                <label style={label}>Material Summary</label>
+                <div style={{ fontSize: font.size.xs, color: colors.textMuted, fontFamily: font.family }}>
+                  {summary.map((item) => (
+                    <div key={item.type} style={{ display: "flex", justifyContent: "space-between", padding: `${spacing.xs}px 0` }}>
+                      <span>{item.label} ({item.count})</span>
+                      <span>
+                        {item.totalArea !== undefined && `${item.totalArea.toFixed(0)} sq ft`}
+                        {item.totalLength !== undefined && `${item.totalLength.toFixed(0)} ft`}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {(format === "glb" || format === "obj") && (
+          <div style={{ ...fieldGroup, fontSize: font.size.xs, color: colors.textMuted, fontFamily: font.family, lineHeight: 1.5 }}>
+            Exports visible objects as 3D geometry. Boundaries, irrigation lines, and annotations are skipped.
+            Coordinates are in feet with Y-up orientation. Open the file in Blender or any glTF/OBJ viewer.
           </div>
         )}
 
@@ -209,7 +270,7 @@ export function ExportModal({ onClose }: Props) {
             }}
           >
             <DownloadIcon size={14} />
-            {exporting ? "Exporting..." : "Export PNG"}
+            {exporting ? "Exporting..." : exportLabel}
           </button>
         </div>
       </div>

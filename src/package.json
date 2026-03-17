@@ -9,7 +9,9 @@
     "start": "node dist/server/index.js"
   },
   "dependencies": {
-    "express": "^4.21.0"
+    "@types/three": "^0.183.1",
+    "express": "^4.21.0",
+    "three": "^0.183.2"
   },
   "devDependencies": {
     "@types/express": "^5.0.0",
