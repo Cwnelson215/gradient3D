@@ -25,6 +25,28 @@ const toolLabels: Record<string, string> = {
   drawAnnotation: "Add Annotation",
 };
 
+const toolHints: Record<string, string> = {
+  select: "Click to select, drag to move",
+  pan: "Click and drag to pan the view",
+  measure: "Click to place measurement points",
+  drawBoundary: "Click to place points, close shape to finish",
+  drawHouse: "Click to place points, close shape to finish",
+  drawFence: "Click to place points, Enter to finish",
+  drawPathway: "Click to place points, Enter to finish",
+  drawDriveway: "Click to place points, close shape to finish",
+  drawPatio: "Click to place points, close shape to finish",
+  drawRetainingWall: "Click to place points, Enter to finish",
+  drawTree: "Click and drag to set radius",
+  drawShrub: "Click and drag to set radius",
+  drawFlowerBed: "Click to place points, close shape to finish",
+  drawGarden: "Click to place points, close shape to finish",
+  drawLawn: "Click to place points, close shape to finish",
+  drawPond: "Click to place points, close shape to finish",
+  drawPool: "Click to place points, close shape to finish",
+  drawIrrigation: "Click to place points, Enter to finish",
+  drawAnnotation: "Click to place a note",
+};
+
 export function StatusBar() {
   const activeTool = useLandscapeStore((s) => s.activeTool);
   const cursorPos = useLandscapeStore((s) => s.cursorWorldPos);
@@ -32,7 +54,6 @@ export function StatusBar() {
   const setViewScale = useLandscapeStore((s) => s.setViewScale);
   const setViewOffset = useLandscapeStore((s) => s.setViewOffset);
   const project = useLandscapeStore((s) => s.project);
-  const viewOffset = useLandscapeStore((s) => s.viewOffset);
 
   const zoomPercent = Math.round(viewScale * 100);
 
@@ -49,11 +70,10 @@ export function StatusBar() {
   const handleFitToView = () => {
     if (!project) return;
     const { widthFt, depthFt } = project.property;
-    // Get the viewport dimensions from the stage container
     const container = document.querySelector(".konvajs-content");
     if (!container) return;
     const vw = container.clientWidth;
-    const vh = container.clientHeight - 28; // subtract status bar height
+    const vh = container.clientHeight - 28;
     const padding = 60;
     const scaleX = (vw - padding * 2) / (widthFt * PIXELS_PER_FOOT);
     const scaleY = (vh - padding * 2) / (depthFt * PIXELS_PER_FOOT);
@@ -64,13 +84,21 @@ export function StatusBar() {
     setViewOffset({ x: newOffsetX, y: newOffsetY });
   };
 
+  const hint = toolHints[activeTool];
+
   return (
     <div style={bar}>
-      {/* Left: tool name */}
+      {/* Left: tool name + hint */}
       <div style={section}>
         <span style={{ color: colors.accent, fontWeight: font.weight.medium }}>
           {toolLabels[activeTool] ?? activeTool}
         </span>
+        {hint && (
+          <>
+            <span style={hintSep} />
+            <span style={{ color: colors.textMuted }}>{hint}</span>
+          </>
+        )}
       </div>
 
       {/* Center: cursor position */}
@@ -124,6 +152,13 @@ const section: React.CSSProperties = {
   flex: 1,
   display: "flex",
   alignItems: "center",
+};
+
+const hintSep: React.CSSProperties = {
+  width: 1,
+  height: 12,
+  background: colors.border,
+  margin: `0 ${spacing.md}px`,
 };
 
 const zoomBtn: React.CSSProperties = {

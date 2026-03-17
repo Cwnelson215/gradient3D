@@ -8,10 +8,11 @@ interface Props {
   offsetX: number;
   offsetY: number;
   selected: boolean;
+  hovered?: boolean;
   onSelect: () => void;
 }
 
-export function BoundaryShape({ obj, scale, offsetX, offsetY, selected, onSelect }: Props) {
+export function BoundaryShape({ obj, scale, offsetX, offsetY, selected, hovered, onSelect }: Props) {
   const pxScale = PIXELS_PER_FOOT * scale;
   const flatPoints = obj.points.flatMap((p) => [
     (p[0] + obj.position.x) * pxScale + offsetX,

@@ -9,10 +9,11 @@ interface Props {
   offsetX: number;
   offsetY: number;
   selected: boolean;
+  hovered?: boolean;
   onSelect: () => void;
 }
 
-export function PointShape({ obj, scale, offsetX, offsetY, selected, onSelect }: Props) {
+export function PointShape({ obj, scale, offsetX, offsetY, selected, hovered, onSelect }: Props) {
   if (obj.points.length === 0) return null;
 
   const pxScale = PIXELS_PER_FOOT * scale;
@@ -23,6 +24,13 @@ export function PointShape({ obj, scale, offsetX, offsetY, selected, onSelect }:
 
   const isTree = obj.type === "tree";
   const isShrub = obj.type === "shrub";
+
+  const hoverGlow = hovered ? {
+    shadowColor: '#4a9eff',
+    shadowBlur: 8,
+    shadowOpacity: 0.3,
+    shadowEnabled: true,
+  } : {};
 
   const gradientProps =
     isTree || isShrub
@@ -48,7 +56,7 @@ export function PointShape({ obj, scale, offsetX, offsetY, selected, onSelect }:
         stroke={selected ? "#fff" : (obj.style.stroke ?? "#2d5a1e")}
         strokeWidth={(obj.style.strokeWidth ?? 1) * (selected ? 2 : 1)}
         opacity={obj.style.opacity ?? 0.8}
-        {...shadow}
+        {...(hovered ? hoverGlow : shadow)}
         onClick={onSelect}
         onTap={onSelect}
       />

@@ -20,6 +20,7 @@ interface LandscapeStore {
   viewMode: ViewMode;
   activeTool: PlanTool;
   selectedObjectId: string | null;
+  hoveredObjectId: string | null;
 
   // Undo/redo stacks (not persisted)
   undoStack: ProjectState[];
@@ -38,6 +39,7 @@ interface LandscapeStore {
   setViewMode: (mode: ViewMode) => void;
   setActiveTool: (tool: PlanTool) => void;
   selectObject: (id: string | null) => void;
+  setHoveredObjectId: (id: string | null) => void;
 
   addObject: (
     type: ObjectType,
@@ -83,6 +85,7 @@ export const useLandscapeStore = create<LandscapeStore>()(
       viewMode: "plan",
       activeTool: "select",
       selectedObjectId: null,
+      hoveredObjectId: null,
       undoStack: [],
       redoStack: [],
       clipboard: null,
@@ -115,6 +118,7 @@ export const useLandscapeStore = create<LandscapeStore>()(
       setViewMode: (mode) => set({ viewMode: mode }),
       setActiveTool: (tool) => set({ activeTool: tool }),
       selectObject: (id) => set({ selectedObjectId: id }),
+      setHoveredObjectId: (id) => set({ hoveredObjectId: id }),
 
       addObject: (type, name, points, style, properties, radius) => {
         const id = uuidv4();

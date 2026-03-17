@@ -9,10 +9,11 @@ interface Props {
   offsetX: number;
   offsetY: number;
   selected: boolean;
+  hovered?: boolean;
   onSelect: () => void;
 }
 
-export function LineShape({ obj, scale, offsetX, offsetY, selected, onSelect }: Props) {
+export function LineShape({ obj, scale, offsetX, offsetY, selected, hovered, onSelect }: Props) {
   const pxScale = PIXELS_PER_FOOT * scale;
   const shadow = getShadowProps(obj.type);
 
@@ -25,6 +26,13 @@ export function LineShape({ obj, scale, offsetX, offsetY, selected, onSelect }: 
 
   const isFence = obj.type === "fence";
   const isRetainingWall = obj.type === "retaining-wall";
+
+  const hoverGlow = hovered ? {
+    shadowColor: '#4a9eff',
+    shadowBlur: 8,
+    shadowOpacity: 0.3,
+    shadowEnabled: true,
+  } : {};
 
   // Fence posts: perpendicular tick marks along segments
   const fencePosts: React.ReactNode[] = [];
@@ -94,7 +102,7 @@ export function LineShape({ obj, scale, offsetX, offsetY, selected, onSelect }: 
         strokeWidth={(obj.style.strokeWidth ?? 2) * (selected ? 1.5 : 1)}
         dash={obj.style.dash}
         opacity={obj.style.opacity ?? 1}
-        {...shadow}
+        {...(hovered ? hoverGlow : shadow)}
         onClick={onSelect}
         onTap={onSelect}
         hitStrokeWidth={12}

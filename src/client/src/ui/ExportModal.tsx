@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useLandscapeStore } from "../store/landscapeStore";
 import { computeMaterialSummary } from "../export/materialSummary";
-import { colors, font, spacing, radius, panelStyle, inputStyle, buttonStyle } from "./theme";
-import { DownloadIcon } from "./icons";
+import { colors, font, spacing, radius, overlayStyle, modalStyle, fieldLabelStyle, inputStyle, buttonStyle } from "./theme";
+import { DownloadIcon, XIcon } from "./icons";
+import { useToast } from "./Toast";
 
 interface Props {
   onClose: () => void;
@@ -11,6 +12,7 @@ interface Props {
 export function ExportModal({ onClose }: Props) {
   const objects = useLandscapeStore((s) => s.project?.objects ?? []);
   const property = useLandscapeStore((s) => s.project?.property);
+  const showToast = useToast((s) => s.showToast);
 
   const [projectName, setProjectName] = useState("Landscape Plan");
   const [background, setBackground] = useState<"dark" | "white">("dark");
@@ -19,103 +21,109 @@ export function ExportModal({ onClose }: Props) {
   const [showLegend, setShowLegend] = useState(true);
   const [showNorthArrow, setShowNorthArrow] = useState(true);
   const [resolution, setResolution] = useState(2);
+  const [exporting, setExporting] = useState(false);
 
   const summary = computeMaterialSummary(objects);
 
   const handleExport = () => {
-    // Use the source stage directly for a clean export
-    const stage = document.querySelector(".konvajs-content canvas") as HTMLCanvasElement;
-    if (!stage) return;
+    setExporting(true);
 
-    // Create a higher-res export
-    const konvaStage = (stage as any).__konvaNode;
+    // Use requestAnimationFrame to show loading state
+    requestAnimationFrame(() => {
+      const canvas = document.querySelector(".konvajs-content canvas") as HTMLCanvasElement;
+      if (!canvas) {
+        setExporting(false);
+        return;
+      }
 
-    // Fallback: simple canvas export
-    const canvas = document.querySelector(".konvajs-content canvas") as HTMLCanvasElement;
-    if (!canvas) return;
+      const exportCanvas = document.createElement("canvas");
+      exportCanvas.width = canvas.width * resolution;
+      exportCanvas.height = canvas.height * resolution;
+      const ctx = exportCanvas.getContext("2d")!;
 
-    // Create high-res canvas
-    const exportCanvas = document.createElement("canvas");
-    exportCanvas.width = canvas.width * resolution;
-    exportCanvas.height = canvas.height * resolution;
-    const ctx = exportCanvas.getContext("2d")!;
+      if (background === "white") {
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+      }
 
-    // Background
-    if (background === "white") {
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
-    }
+      ctx.drawImage(canvas, 0, 0, exportCanvas.width, exportCanvas.height);
 
-    ctx.drawImage(canvas, 0, 0, exportCanvas.width, exportCanvas.height);
+      const scale = resolution;
+      const textColor = background === "white" ? "#333" : "#e0e0e8";
+      const mutedColor = background === "white" ? "#888" : "#888";
 
-    // Add decorations
-    const scale = resolution;
-    const textColor = background === "white" ? "#333" : "#e0e0e8";
-    const mutedColor = background === "white" ? "#888" : "#888";
+      if (showTitleBlock) {
+        ctx.font = `600 ${18 * scale}px Inter, sans-serif`;
+        ctx.fillStyle = textColor;
+        ctx.fillText(projectName, 20 * scale, exportCanvas.height - 40 * scale);
+        ctx.font = `${11 * scale}px Inter, sans-serif`;
+        ctx.fillStyle = mutedColor;
+        const subtitle = property
+          ? `${property.widthFt} ft × ${property.depthFt} ft  |  ${new Date().toLocaleDateString()}`
+          : new Date().toLocaleDateString();
+        ctx.fillText(subtitle, 20 * scale, exportCanvas.height - 18 * scale);
+      }
 
-    if (showTitleBlock) {
-      ctx.font = `600 ${18 * scale}px Inter, sans-serif`;
-      ctx.fillStyle = textColor;
-      ctx.fillText(projectName, 20 * scale, exportCanvas.height - 40 * scale);
-      ctx.font = `${11 * scale}px Inter, sans-serif`;
-      ctx.fillStyle = mutedColor;
-      const subtitle = property
-        ? `${property.widthFt} ft × ${property.depthFt} ft  |  ${new Date().toLocaleDateString()}`
-        : new Date().toLocaleDateString();
-      ctx.fillText(subtitle, 20 * scale, exportCanvas.height - 18 * scale);
-    }
+      if (showScaleBar && property) {
+        const sbX = 20 * scale;
+        const sbY = exportCanvas.height - 70 * scale;
+        const pxPerFt = 8 * scale;
+        const barLen = 10 * pxPerFt;
+        ctx.strokeStyle = textColor;
+        ctx.lineWidth = 2 * scale;
+        ctx.beginPath();
+        ctx.moveTo(sbX, sbY);
+        ctx.lineTo(sbX + barLen, sbY);
+        ctx.moveTo(sbX, sbY - 4 * scale);
+        ctx.lineTo(sbX, sbY + 4 * scale);
+        ctx.moveTo(sbX + barLen, sbY - 4 * scale);
+        ctx.lineTo(sbX + barLen, sbY + 4 * scale);
+        ctx.stroke();
+        ctx.font = `${10 * scale}px Inter, sans-serif`;
+        ctx.fillStyle = mutedColor;
+        ctx.fillText("10 ft", sbX + barLen / 2 - 12 * scale, sbY + 16 * scale);
+      }
 
-    if (showScaleBar && property) {
-      const sbX = 20 * scale;
-      const sbY = exportCanvas.height - 70 * scale;
-      const pxPerFt = 8 * scale; // PIXELS_PER_FOOT * scale
-      const barLen = 10 * pxPerFt;
-      ctx.strokeStyle = textColor;
-      ctx.lineWidth = 2 * scale;
-      ctx.beginPath();
-      ctx.moveTo(sbX, sbY);
-      ctx.lineTo(sbX + barLen, sbY);
-      ctx.moveTo(sbX, sbY - 4 * scale);
-      ctx.lineTo(sbX, sbY + 4 * scale);
-      ctx.moveTo(sbX + barLen, sbY - 4 * scale);
-      ctx.lineTo(sbX + barLen, sbY + 4 * scale);
-      ctx.stroke();
-      ctx.font = `${10 * scale}px Inter, sans-serif`;
-      ctx.fillStyle = mutedColor;
-      ctx.fillText("10 ft", sbX + barLen / 2 - 12 * scale, sbY + 16 * scale);
-    }
+      if (showNorthArrow) {
+        const naX = exportCanvas.width - 40 * scale;
+        const naY = 40 * scale;
+        ctx.strokeStyle = textColor;
+        ctx.fillStyle = textColor;
+        ctx.lineWidth = 2 * scale;
+        ctx.beginPath();
+        ctx.moveTo(naX, naY + 20 * scale);
+        ctx.lineTo(naX, naY - 14 * scale);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(naX - 6 * scale, naY - 6 * scale);
+        ctx.lineTo(naX, naY - 14 * scale);
+        ctx.lineTo(naX + 6 * scale, naY - 6 * scale);
+        ctx.closePath();
+        ctx.fill();
+        ctx.font = `600 ${13 * scale}px Inter, sans-serif`;
+        ctx.fillText("N", naX - 4 * scale, naY - 20 * scale);
+      }
 
-    if (showNorthArrow) {
-      const naX = exportCanvas.width - 40 * scale;
-      const naY = 40 * scale;
-      ctx.strokeStyle = textColor;
-      ctx.fillStyle = textColor;
-      ctx.lineWidth = 2 * scale;
-      ctx.beginPath();
-      ctx.moveTo(naX, naY + 20 * scale);
-      ctx.lineTo(naX, naY - 14 * scale);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(naX - 6 * scale, naY - 6 * scale);
-      ctx.lineTo(naX, naY - 14 * scale);
-      ctx.lineTo(naX + 6 * scale, naY - 6 * scale);
-      ctx.closePath();
-      ctx.fill();
-      ctx.font = `600 ${13 * scale}px Inter, sans-serif`;
-      ctx.fillText("N", naX - 4 * scale, naY - 20 * scale);
-    }
+      const url = exportCanvas.toDataURL("image/png");
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${projectName.replace(/\s+/g, "-").toLowerCase()}.png`;
+      a.click();
 
-    // Download
-    const url = exportCanvas.toDataURL("image/png");
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${projectName.replace(/\s+/g, "-").toLowerCase()}.png`;
-    a.click();
+      setExporting(false);
+      showToast("Export complete", "success");
+      onClose();
+    });
   };
 
   return (
-    <div style={overlay} onClick={onClose}>
-      <div style={modal} onClick={(e) => e.stopPropagation()}>
+    <div style={overlayStyle()} onClick={onClose}>
+      <div style={modalStyle(440)} onClick={(e) => e.stopPropagation()}>
+        {/* Close button */}
+        <button onClick={onClose} style={closeBtn}>
+          <XIcon size={16} />
+        </button>
+
         <h2 style={{ margin: `0 0 ${spacing.xxl}px`, color: colors.text, fontFamily: font.family, fontWeight: font.weight.semibold, fontSize: 18 }}>
           Export Plan
         </h2>
@@ -189,10 +197,19 @@ export function ExportModal({ onClose }: Props) {
           <button onClick={onClose} style={{ ...buttonStyle("default"), flex: 1 }}>Cancel</button>
           <button
             onClick={handleExport}
-            style={{ ...buttonStyle("primary"), flex: 2, display: "flex", alignItems: "center", justifyContent: "center", gap: spacing.sm }}
+            disabled={exporting}
+            style={{
+              ...buttonStyle("primary"),
+              flex: 2,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: spacing.sm,
+              opacity: exporting ? 0.7 : 1,
+            }}
           >
             <DownloadIcon size={14} />
-            Export PNG
+            {exporting ? "Exporting..." : "Export PNG"}
           </button>
         </div>
       </div>
@@ -243,38 +260,22 @@ function Toggle({
   );
 }
 
-const overlay: React.CSSProperties = {
-  position: "fixed",
-  inset: 0,
-  background: "rgba(0,0,0,0.6)",
+const closeBtn: React.CSSProperties = {
+  position: "absolute",
+  top: spacing.lg,
+  right: spacing.lg,
+  background: "none",
+  border: "none",
+  cursor: "pointer",
+  color: colors.textMuted,
+  padding: 4,
   display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  zIndex: 1000,
-  pointerEvents: "auto",
-  backdropFilter: "blur(4px)",
-};
-
-const modal: React.CSSProperties = {
-  ...panelStyle(),
-  padding: spacing.xxl,
-  width: 420,
-  maxHeight: "80vh",
-  overflowY: "auto",
+  borderRadius: 4,
 };
 
 const fieldGroup: React.CSSProperties = { marginBottom: spacing.xl };
 
-const label: React.CSSProperties = {
-  display: "block",
-  color: colors.textMuted,
-  fontSize: font.size.xs,
-  fontFamily: font.family,
-  fontWeight: font.weight.medium,
-  marginBottom: spacing.md,
-  textTransform: "uppercase",
-  letterSpacing: "0.5px",
-};
+const label: React.CSSProperties = fieldLabelStyle();
 
 const input: React.CSSProperties = inputStyle();
 

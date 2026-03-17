@@ -1,11 +1,13 @@
 import { useState, useRef } from "react";
 import { useLandscapeStore } from "../store/landscapeStore";
 import type { ProjectState } from "../types/landscape";
-import { colors, font, spacing, radius, shadow, panelStyle, inputStyle, buttonStyle } from "./theme";
+import { colors, font, spacing, radius, overlayStyle, modalStyle, fieldLabelStyle, inputStyle, buttonStyle } from "./theme";
+import { useToast } from "./Toast";
 
 export function ProjectSetupModal() {
   const initProject = useLandscapeStore((s) => s.initProject);
   const loadProject = useLandscapeStore((s) => s.loadProject);
+  const showToast = useToast((s) => s.showToast);
   const [widthFt, setWidthFt] = useState<number | string>(100);
   const [depthFt, setDepthFt] = useState<number | string>(80);
   const [gridSpacingFt, setGridSpacingFt] = useState<number | string>(10);
@@ -43,9 +45,10 @@ export function ProjectSetupModal() {
         const data = JSON.parse(reader.result as string) as ProjectState;
         if (data.property && data.objects) {
           loadProject(data);
+          showToast("Project loaded", "success");
         }
       } catch {
-        // invalid file
+        showToast("Invalid project file", "error");
       }
     };
     reader.readAsText(file);
@@ -58,8 +61,11 @@ export function ProjectSetupModal() {
   const previewH = (d / maxDim) * 200;
 
   return (
-    <div style={overlay}>
-      <div style={modal}>
+    <div style={overlayStyle()}>
+      <div style={modalStyle(560)}>
+        {/* Wordmark */}
+        <div style={wordmark}>Gradient</div>
+
         <h2 style={{ margin: `0 0 ${spacing.xxl}px`, color: colors.text, fontFamily: font.family, fontWeight: font.weight.semibold, fontSize: 20 }}>
           New Landscape Project
         </h2>
@@ -130,7 +136,7 @@ export function ProjectSetupModal() {
                 color: colors.textMuted,
                 fontSize: font.size.xs,
                 fontFamily: font.family,
-                background: `${colors.accent}08`,
+                background: colors.accentSubtle,
               }}
             >
               {w} x {d} ft
@@ -145,8 +151,11 @@ export function ProjectSetupModal() {
           Create Project
         </button>
 
-        <div style={{ textAlign: "center", margin: `${spacing.lg}px 0 ${spacing.md}px`, color: colors.textMuted, fontSize: font.size.md, fontFamily: font.family }}>
-          or
+        {/* Divider */}
+        <div style={divider}>
+          <div style={dividerLine} />
+          <span style={dividerText}>or</span>
+          <div style={dividerLine} />
         </div>
 
         <button onClick={handleLoadProject} style={{ ...createBtn, background: colors.surfaceHover }}>
@@ -164,21 +173,13 @@ export function ProjectSetupModal() {
   );
 }
 
-const overlay: React.CSSProperties = {
-  position: "fixed",
-  inset: 0,
-  background: "rgba(0,0,0,0.7)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  zIndex: 1000,
-  backdropFilter: "blur(4px)",
-};
-
-const modal: React.CSSProperties = {
-  ...panelStyle(),
-  padding: 32,
-  width: 560,
+const wordmark: React.CSSProperties = {
+  fontFamily: font.family,
+  fontWeight: font.weight.semibold,
+  fontSize: 28,
+  color: colors.accent,
+  marginBottom: spacing.md,
+  letterSpacing: "-0.5px",
 };
 
 const fieldGroup: React.CSSProperties = {
@@ -186,11 +187,7 @@ const fieldGroup: React.CSSProperties = {
 };
 
 const label: React.CSSProperties = {
-  display: "block",
-  color: colors.textMuted,
-  fontSize: font.size.sm,
-  fontFamily: font.family,
-  fontWeight: font.weight.medium,
+  ...fieldLabelStyle(),
   marginBottom: spacing.sm,
 };
 
@@ -204,4 +201,23 @@ const createBtn: React.CSSProperties = {
   fontSize: font.size.xl,
   textAlign: "center",
   display: "block",
+};
+
+const divider: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: spacing.lg,
+  margin: `${spacing.xl}px 0`,
+};
+
+const dividerLine: React.CSSProperties = {
+  flex: 1,
+  height: 1,
+  background: colors.border,
+};
+
+const dividerText: React.CSSProperties = {
+  color: colors.textMuted,
+  fontSize: font.size.sm,
+  fontFamily: font.family,
 };

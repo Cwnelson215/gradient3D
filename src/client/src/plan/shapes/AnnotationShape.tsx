@@ -8,10 +8,11 @@ interface Props {
   offsetX: number;
   offsetY: number;
   selected: boolean;
+  hovered?: boolean;
   onSelect: () => void;
 }
 
-export function AnnotationShape({ obj, scale, offsetX, offsetY, selected, onSelect }: Props) {
+export function AnnotationShape({ obj, scale, offsetX, offsetY, selected, hovered, onSelect }: Props) {
   if (obj.points.length === 0) return null;
 
   const pxScale = PIXELS_PER_FOOT * scale;

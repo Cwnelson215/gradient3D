@@ -3,6 +3,7 @@ import { useLandscapeStore } from "../store/landscapeStore";
 import type { PlanTool, ObjectCategory } from "../types/landscape";
 import { getRegistryByCategory } from "../types/objectRegistry";
 import { colors, font, spacing, radius, shadow, transition } from "./theme";
+import { Tooltip } from "./Tooltip";
 import {
   CursorIcon,
   HandIcon,
@@ -23,18 +24,18 @@ const categoryLabels: Record<ObjectCategory, string> = {
 };
 
 const categoryIcons: Record<ObjectCategory, React.ReactNode> = {
-  structure: <HouseIcon size={14} />,
-  hardscape: <SquareIcon size={14} />,
-  softscape: <LeafIcon size={14} />,
-  water: <DropletIcon size={14} />,
+  structure: <HouseIcon size={16} />,
+  hardscape: <SquareIcon size={16} />,
+  softscape: <LeafIcon size={16} />,
+  water: <DropletIcon size={16} />,
 };
 
 const categoryOrder: ObjectCategory[] = ["structure", "hardscape", "softscape", "water"];
 
-const topTools: { key: PlanTool; label: string; icon: React.ReactNode }[] = [
-  { key: "select", label: "Select", icon: <CursorIcon size={14} /> },
-  { key: "pan", label: "Pan", icon: <HandIcon size={14} /> },
-  { key: "measure", label: "Measure", icon: <RulerIcon size={14} /> },
+const topTools: { key: PlanTool; label: string; shortcut: string; icon: React.ReactNode }[] = [
+  { key: "select", label: "Select", shortcut: "1", icon: <CursorIcon size={16} /> },
+  { key: "pan", label: "Pan", shortcut: "2", icon: <HandIcon size={16} /> },
+  { key: "measure", label: "Measure", shortcut: "3", icon: <RulerIcon size={16} /> },
 ];
 
 export function PlanToolbar() {
@@ -59,57 +60,57 @@ export function PlanToolbar() {
   return (
     <div style={container}>
       {topTools.map((t) => (
-        <button
-          key={t.key}
-          onClick={() => handleToolSelect(t.key)}
-          style={{
-            ...btn,
-            background: activeTool === t.key ? colors.accent : colors.surface,
-            color: activeTool === t.key ? "#fff" : colors.textMuted,
-            borderColor: activeTool === t.key ? colors.accent : colors.border,
-          }}
-        >
-          {t.icon}
-          {t.label}
-        </button>
+        <Tooltip key={t.key} content={t.label} shortcut={t.shortcut}>
+          <button
+            onClick={() => handleToolSelect(t.key)}
+            style={{
+              ...btn,
+              background: activeTool === t.key ? colors.accent : "transparent",
+              color: activeTool === t.key ? "#fff" : colors.textMuted,
+            }}
+          >
+            {t.icon}
+          </button>
+        </Tooltip>
       ))}
 
       <div style={separator} />
 
       {categoryOrder.map((cat) => (
         <div key={cat} style={{ position: "relative" }}>
-          <button
-            onClick={() => handleCategoryClick(cat)}
-            style={{
-              ...btn,
-              background: activeCategoryTool(cat) ? colors.accent : openCategory === cat ? colors.surfaceHover : colors.surface,
-              color: activeCategoryTool(cat) ? "#fff" : openCategory === cat ? colors.text : colors.textMuted,
-              borderColor: activeCategoryTool(cat) ? colors.accent : openCategory === cat ? colors.border : colors.border,
-            }}
-          >
-            {categoryIcons[cat]}
-            {categoryLabels[cat]}
-            <ChevronDownIcon size={12} />
-          </button>
+          <Tooltip content={categoryLabels[cat]}>
+            <button
+              onClick={() => handleCategoryClick(cat)}
+              style={{
+                ...btn,
+                background: activeCategoryTool(cat) ? colors.accent : openCategory === cat ? colors.surfaceHover : "transparent",
+                color: activeCategoryTool(cat) ? "#fff" : openCategory === cat ? colors.text : colors.textMuted,
+              }}
+            >
+              {categoryIcons[cat]}
+              <ChevronDownIcon size={10} />
+            </button>
+          </Tooltip>
 
           {openCategory === cat && (
             <div style={dropdown}>
+              <div style={dropdownHeader}>{categoryLabels[cat]}</div>
               {grouped[cat].map((entry) => (
                 <button
                   key={entry.tool}
                   onClick={() => handleToolSelect(entry.tool)}
                   style={{
                     ...dropdownItem,
-                    background: activeTool === entry.tool ? colors.accent : "transparent",
-                    color: activeTool === entry.tool ? "#fff" : colors.text,
+                    background: activeTool === entry.tool ? colors.accentSubtle : "transparent",
+                    color: activeTool === entry.tool ? colors.accent : colors.text,
                   }}
                 >
                   <span
                     style={{
                       display: "inline-block",
-                      width: 8,
-                      height: 8,
-                      borderRadius: entry.geometry === "point" ? "50%" : 2,
+                      width: 12,
+                      height: 12,
+                      borderRadius: entry.geometry === "point" ? "50%" : 3,
                       background: entry.defaultStyle.fill === "transparent"
                         ? entry.defaultStyle.stroke
                         : entry.defaultStyle.fill,
@@ -124,37 +125,33 @@ export function PlanToolbar() {
         </div>
       ))}
 
-      {/* Annotation tool */}
-      <button
-        onClick={() => handleToolSelect("drawAnnotation")}
-        style={{
-          ...btn,
-          background: activeTool === "drawAnnotation" ? colors.accent : colors.surface,
-          color: activeTool === "drawAnnotation" ? "#fff" : colors.textMuted,
-          borderColor: activeTool === "drawAnnotation" ? colors.accent : colors.border,
-        }}
-      >
-        <TextIcon size={14} />
-        Note
-      </button>
+      <div style={separator} />
+
+      <Tooltip content="Annotation">
+        <button
+          onClick={() => handleToolSelect("drawAnnotation")}
+          style={{
+            ...btn,
+            background: activeTool === "drawAnnotation" ? colors.accent : "transparent",
+            color: activeTool === "drawAnnotation" ? "#fff" : colors.textMuted,
+          }}
+        >
+          <TextIcon size={16} />
+        </button>
+      </Tooltip>
     </div>
   );
 }
 
 const container: React.CSSProperties = {
-  position: "absolute",
-  top: 8,
-  left: "50%",
-  transform: "translateX(-50%)",
   display: "flex",
-  gap: spacing.sm,
-  zIndex: 100,
-  pointerEvents: "auto",
+  alignItems: "center",
+  gap: spacing.sm + 2,
 };
 
 const btn: React.CSSProperties = {
-  padding: `${spacing.sm + 2}px ${spacing.lg}px`,
-  border: `1px solid ${colors.border}`,
+  padding: spacing.md,
+  border: "none",
   borderRadius: radius.sm,
   cursor: "pointer",
   fontFamily: font.family,
@@ -163,29 +160,40 @@ const btn: React.CSSProperties = {
   whiteSpace: "nowrap",
   display: "flex",
   alignItems: "center",
-  gap: spacing.sm + 1,
+  gap: 3,
   transition,
   lineHeight: 1,
 };
 
 const separator: React.CSSProperties = {
   width: 1,
+  alignSelf: "stretch",
   background: colors.border,
-  margin: `0 ${spacing.sm}px`,
+  margin: `${spacing.sm}px ${spacing.xs}px`,
 };
 
 const dropdown: React.CSSProperties = {
   position: "absolute",
-  top: "100%",
-  left: 0,
-  marginTop: spacing.sm,
-  background: colors.surface,
+  top: "calc(100% + 8px)",
+  left: "50%",
+  transform: "translateX(-50%)",
+  background: colors.surfaceFloating,
   border: `1px solid ${colors.border}`,
   borderRadius: radius.md,
   padding: spacing.sm,
-  minWidth: 160,
+  minWidth: 170,
   zIndex: 200,
-  boxShadow: shadow.md,
+  boxShadow: shadow.lg,
+};
+
+const dropdownHeader: React.CSSProperties = {
+  padding: `${spacing.sm}px ${spacing.md}px`,
+  fontSize: font.size.xs,
+  fontWeight: font.weight.semibold,
+  color: colors.textMuted,
+  textTransform: "uppercase",
+  letterSpacing: "0.5px",
+  fontFamily: font.family,
 };
 
 const dropdownItem: React.CSSProperties = {

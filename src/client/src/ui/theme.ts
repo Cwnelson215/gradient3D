@@ -3,14 +3,26 @@ import type React from "react";
 export const colors = {
   bg: "#0f0f14",
   surface: "#1a1a24",
+  surfaceFloating: "#1e1e2e",
   surfaceHover: "#222233",
   border: "#2a2a3a",
+  borderFocus: "#4a9eff",
   text: "#e0e0e8",
   textMuted: "#8888a0",
   accent: "#4a9eff",
   accentHover: "#3a8eef",
+  accentSubtle: "rgba(74, 158, 255, 0.15)",
   danger: "#e04040",
   dangerHover: "#c03030",
+  success: "#34d399",
+  warning: "#fbbf24",
+};
+
+export const zIndex = {
+  hud: 100,
+  dropdown: 200,
+  modal: 1000,
+  toast: 1100,
 };
 
 export const font = {
@@ -60,6 +72,45 @@ export function panelStyle(): React.CSSProperties {
     border: `1px solid ${colors.border}`,
     boxShadow: shadow.md,
     fontFamily: font.family,
+  };
+}
+
+export function overlayStyle(): React.CSSProperties {
+  return {
+    position: "fixed",
+    inset: 0,
+    background: "rgba(0,0,0,0.6)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: zIndex.modal,
+    pointerEvents: "auto",
+    backdropFilter: "blur(4px)",
+  };
+}
+
+export function modalStyle(width: number): React.CSSProperties {
+  return {
+    ...panelStyle(),
+    background: colors.surfaceFloating,
+    padding: spacing.xxl,
+    width,
+    maxHeight: "80vh",
+    overflowY: "auto",
+    position: "relative",
+  };
+}
+
+export function fieldLabelStyle(): React.CSSProperties {
+  return {
+    display: "block",
+    color: colors.textMuted,
+    fontSize: font.size.xs,
+    fontFamily: font.family,
+    fontWeight: font.weight.medium,
+    marginBottom: spacing.xs,
+    textTransform: "uppercase",
+    letterSpacing: "0.5px",
   };
 }
 

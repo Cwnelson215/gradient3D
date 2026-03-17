@@ -1,70 +1,114 @@
 import { useState } from "react";
-import { colors, font, spacing, radius, shadow, panelStyle, transition } from "./theme";
+import { colors, font, spacing, radius, shadow, panelStyle, zIndex } from "./theme";
+import { HelpCircleIcon, XIcon } from "./icons";
+import { Tooltip } from "./Tooltip";
 
-export function HotkeyMenu() {
-  const [open, setOpen] = useState(false);
-
+export function HotkeyButton({ open, onToggle }: { open: boolean; onToggle: () => void }) {
   return (
-    <div style={container}>
-      {open && (
-        <div style={panel}>
-          <div style={sectionTitle}>Keyboard Shortcuts</div>
-          <Row keys="Ctrl+Z" desc="Undo" />
-          <Row keys="Ctrl+Shift+Z" desc="Redo" />
-          <Row keys="Delete" desc="Delete selected" />
-          <Row keys="Escape" desc="Cancel / deselect" />
-          <Row keys="Enter" desc="Finish line drawing" />
-          <Row keys="Ctrl+C" desc="Copy object" />
-          <Row keys="Ctrl+V" desc="Paste object" />
-          <Row keys="Ctrl+D" desc="Duplicate object" />
-          <Row keys="1 / 2 / 3" desc="Select / Pan / Measure" />
-
-          <div style={{ ...sectionTitle, marginTop: spacing.md }}>Mouse Controls</div>
-          <Row keys="Scroll" desc="Zoom in/out" />
-          <Row keys="Click" desc="Select object" />
-          <Row keys="Middle drag" desc="Pan view" />
-        </div>
-      )}
-      <button onClick={() => setOpen(!open)} style={btn} title="Keyboard shortcuts">
-        ?
+    <Tooltip content="Keyboard Shortcuts" shortcut="?">
+      <button onClick={onToggle} style={triggerBtn}>
+        <HelpCircleIcon size={15} />
       </button>
-    </div>
+    </Tooltip>
   );
 }
 
-function Row({ keys, desc }: { keys: string; desc: string }) {
+export function HotkeyPanel({ onClose }: { onClose: () => void }) {
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", gap: spacing.xl }}>
-      <span style={{ color: colors.text, whiteSpace: "nowrap", fontSize: font.size.xs }}>{keys}</span>
-      <span style={{ color: colors.textMuted, fontSize: font.size.xs }}>{desc}</span>
+    <div style={overlay} onClick={onClose}>
+      <div style={panel} onClick={(e) => e.stopPropagation()}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.lg }}>
+          <span style={{ color: colors.text, fontWeight: font.weight.semibold, fontSize: font.size.lg, fontFamily: font.family }}>
+            Keyboard Shortcuts
+          </span>
+          <button onClick={onClose} style={closeBtn}>
+            <XIcon size={14} />
+          </button>
+        </div>
+
+        <div style={sectionTitle}>Tools</div>
+        <Row keys={["1"]} desc="Select" />
+        <Row keys={["2"]} desc="Pan" />
+        <Row keys={["3"]} desc="Measure" />
+
+        <div style={{ ...sectionTitle, marginTop: spacing.lg }}>Actions</div>
+        <Row keys={["Ctrl", "Z"]} desc="Undo" />
+        <Row keys={["Ctrl", "Shift", "Z"]} desc="Redo" />
+        <Row keys={["Del"]} desc="Delete selected" />
+        <Row keys={["Esc"]} desc="Cancel / deselect" />
+        <Row keys={["Enter"]} desc="Finish line drawing" />
+        <Row keys={["Ctrl", "C"]} desc="Copy object" />
+        <Row keys={["Ctrl", "V"]} desc="Paste object" />
+        <Row keys={["Ctrl", "D"]} desc="Duplicate object" />
+
+        <div style={{ ...sectionTitle, marginTop: spacing.lg }}>Mouse</div>
+        <Row keys={["Scroll"]} desc="Zoom in/out" />
+        <Row keys={["Click"]} desc="Select object" />
+        <Row keys={["Middle"]} desc="Pan view" />
+      </div>
     </div>
   );
 }
 
-const container: React.CSSProperties = {
-  position: "absolute",
-  bottom: 36,
-  right: 8,
+function Row({ keys, desc }: { keys: string[]; desc: string }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: spacing.xl, padding: `${spacing.xs + 1}px 0` }}>
+      <div style={{ display: "flex", gap: 3 }}>
+        {keys.map((k, i) => (
+          <kbd key={i} style={kbd}>{k}</kbd>
+        ))}
+      </div>
+      <span style={{ color: colors.textMuted, fontSize: font.size.sm, fontFamily: font.family }}>{desc}</span>
+    </div>
+  );
+}
+
+const triggerBtn: React.CSSProperties = {
+  background: "none",
+  border: "none",
+  cursor: "pointer",
+  padding: 6,
+  borderRadius: 4,
   display: "flex",
-  flexDirection: "column",
-  alignItems: "flex-end",
-  gap: spacing.sm,
-  zIndex: 100,
+  alignItems: "center",
+  justifyContent: "center",
+  color: "#8888a0",
+  transition: "all 0.15s ease",
+};
+
+const overlay: React.CSSProperties = {
+  position: "fixed",
+  inset: 0,
+  background: "rgba(0,0,0,0.4)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  zIndex: zIndex.modal,
   pointerEvents: "auto",
+  backdropFilter: "blur(2px)",
 };
 
 const panel: React.CSSProperties = {
   ...panelStyle(),
-  padding: `${spacing.md}px ${spacing.lg}px`,
-  fontSize: font.size.sm,
+  background: colors.surfaceFloating,
+  padding: spacing.xxl,
+  width: 360,
+  maxHeight: "80vh",
+  overflowY: "auto",
+};
+
+const closeBtn: React.CSSProperties = {
+  background: "none",
+  border: "none",
+  cursor: "pointer",
+  color: colors.textMuted,
+  padding: 4,
   display: "flex",
-  flexDirection: "column",
-  gap: spacing.sm,
-  whiteSpace: "nowrap",
+  borderRadius: 4,
 };
 
 const sectionTitle: React.CSSProperties = {
-  color: colors.text,
+  color: colors.textMuted,
   fontWeight: font.weight.semibold,
   fontSize: font.size.xs,
   textTransform: "uppercase",
@@ -73,17 +117,15 @@ const sectionTitle: React.CSSProperties = {
   fontFamily: font.family,
 };
 
-const btn: React.CSSProperties = {
-  padding: `${spacing.sm + 2}px ${spacing.md + 2}px`,
+const kbd: React.CSSProperties = {
+  background: colors.bg,
   border: `1px solid ${colors.border}`,
-  borderRadius: radius.sm,
-  cursor: "pointer",
+  borderRadius: 4,
+  padding: "2px 7px",
+  fontSize: font.size.xs,
   fontFamily: font.family,
-  fontSize: font.size.sm,
-  fontWeight: font.weight.semibold,
-  background: colors.surface,
-  color: colors.textMuted,
-  transition,
-  width: 28,
+  color: colors.text,
+  lineHeight: "16px",
+  minWidth: 20,
   textAlign: "center",
 };

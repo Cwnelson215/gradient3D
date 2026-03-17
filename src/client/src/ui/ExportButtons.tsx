@@ -1,44 +1,29 @@
-import { colors, font, spacing, radius, transition } from "./theme";
 import { DownloadIcon } from "./icons";
+import { Tooltip } from "./Tooltip";
 
 interface Props {
   onExportClick: () => void;
 }
 
-export function ExportButtons({ onExportClick }: Props) {
+export function ExportButton({ onExportClick }: Props) {
   return (
-    <div style={container}>
-      <button onClick={onExportClick} style={btn} title="Export plan as image">
-        <DownloadIcon size={13} />
-        Export
+    <Tooltip content="Export as PNG">
+      <button onClick={onExportClick} style={iconBtn}>
+        <DownloadIcon size={15} />
       </button>
-    </div>
+    </Tooltip>
   );
 }
 
-const container: React.CSSProperties = {
-  position: "absolute",
-  top: 8,
-  right: 8,
-  display: "flex",
-  gap: spacing.sm,
-  zIndex: 100,
-  pointerEvents: "auto",
-};
-
-const btn: React.CSSProperties = {
-  padding: `${spacing.sm + 2}px ${spacing.lg}px`,
-  border: `1px solid ${colors.border}`,
-  borderRadius: radius.sm,
+const iconBtn: React.CSSProperties = {
+  background: "none",
+  border: "none",
   cursor: "pointer",
-  fontFamily: font.family,
-  fontSize: font.size.sm,
-  fontWeight: font.weight.medium,
-  background: colors.surface,
-  color: colors.textMuted,
+  padding: 6,
+  borderRadius: 4,
   display: "flex",
   alignItems: "center",
-  gap: spacing.sm + 1,
-  transition,
-  lineHeight: 1,
+  justifyContent: "center",
+  color: "#8888a0",
+  transition: "all 0.15s ease",
 };

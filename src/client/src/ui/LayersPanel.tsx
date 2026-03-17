@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLandscapeStore } from "../store/landscapeStore";
 import type { ObjectCategory } from "../types/landscape";
-import { colors, font, spacing, radius, panelStyle, transition } from "./theme";
+import { colors, font, spacing, radius, panelStyle, transition, zIndex } from "./theme";
 import { EyeIcon, EyeOffIcon, LockIcon, UnlockIcon, ChevronDownIcon, ChevronRightIcon } from "./icons";
 
 const categoryLabels: Record<ObjectCategory, string> = {
@@ -38,7 +38,7 @@ export function LayersPanel() {
 
   return (
     <div style={panel}>
-      <div style={{ fontWeight: font.weight.semibold, fontSize: font.size.sm, color: colors.text, marginBottom: spacing.md, fontFamily: font.family }}>
+      <div style={panelHeader}>
         Layers
       </div>
       {allCategories.map((cat) => {
@@ -68,7 +68,7 @@ export function LayersPanel() {
                     onClick={() => selectObject(obj.id)}
                     style={{
                       ...row,
-                      background: isSelected ? `${colors.accent}22` : "transparent",
+                      background: isSelected ? colors.accentSubtle : "transparent",
                       borderLeft: isSelected ? `2px solid ${colors.accent}` : "2px solid transparent",
                     }}
                   >
@@ -125,14 +125,23 @@ export function LayersPanel() {
 const panel: React.CSSProperties = {
   ...panelStyle(),
   position: "absolute",
-  top: 80,
-  left: 8,
+  top: 56,
+  left: spacing.md,
   width: 220,
-  padding: spacing.md,
+  padding: 0,
   pointerEvents: "auto",
-  zIndex: 100,
+  zIndex: zIndex.hud,
   maxHeight: "calc(100vh - 120px)",
   overflowY: "auto",
+};
+
+const panelHeader: React.CSSProperties = {
+  fontWeight: font.weight.semibold,
+  fontSize: font.size.sm,
+  color: colors.text,
+  padding: `${spacing.md}px ${spacing.lg}px`,
+  borderBottom: `1px solid ${colors.border}`,
+  fontFamily: font.family,
 };
 
 const sectionHeader: React.CSSProperties = {
@@ -140,7 +149,7 @@ const sectionHeader: React.CSSProperties = {
   alignItems: "center",
   gap: spacing.sm,
   width: "100%",
-  padding: `${spacing.sm}px ${spacing.sm}px`,
+  padding: `${spacing.sm}px ${spacing.md}px`,
   border: "none",
   borderRadius: radius.sm,
   background: "transparent",
@@ -162,6 +171,7 @@ const row: React.CSSProperties = {
   cursor: "pointer",
   fontFamily: font.family,
   transition,
+  margin: `0 ${spacing.xs}px`,
 };
 
 const iconBtn: React.CSSProperties = {

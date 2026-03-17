@@ -19,6 +19,7 @@ function ShapeForObject({
   offsetX,
   offsetY,
   selected,
+  hovered,
   onSelect,
 }: {
   obj: LandscapeObject;
@@ -26,9 +27,10 @@ function ShapeForObject({
   offsetX: number;
   offsetY: number;
   selected: boolean;
+  hovered: boolean;
   onSelect: () => void;
 }) {
-  const shapeProps = { obj, scale, offsetX, offsetY, selected, onSelect };
+  const shapeProps = { obj, scale, offsetX, offsetY, selected, hovered, onSelect };
 
   // Special renderers
   if (obj.type === "boundary") return <BoundaryShape {...shapeProps} />;
@@ -51,6 +53,7 @@ function ShapeForObject({
 export function ObjectLayer({ scale, offsetX, offsetY }: Props) {
   const objects = useLandscapeStore((s) => s.project?.objects ?? []);
   const selectedId = useLandscapeStore((s) => s.selectedObjectId);
+  const hoveredId = useLandscapeStore((s) => s.hoveredObjectId);
   const selectObject = useLandscapeStore((s) => s.selectObject);
 
   const sorted = [...objects]
@@ -67,6 +70,7 @@ export function ObjectLayer({ scale, offsetX, offsetY }: Props) {
           offsetX={offsetX}
           offsetY={offsetY}
           selected={obj.id === selectedId}
+          hovered={obj.id === hoveredId && obj.id !== selectedId}
           onSelect={() => selectObject(obj.id)}
         />
       ))}

@@ -1,4 +1,4 @@
-import { Text } from "react-konva";
+import { Text, Rect, Group } from "react-konva";
 import { useLandscapeStore } from "../../store/landscapeStore";
 import { PIXELS_PER_FOOT, polygonArea, polygonCentroid } from "../../utils/coordinates";
 import { polylineLength } from "../../utils/coordinates";
@@ -12,6 +12,9 @@ interface Props {
 export function LabelLayer({ scale, offsetX, offsetY }: Props) {
   const objects = useLandscapeStore((s) => s.project?.objects ?? []);
   const pxScale = PIXELS_PER_FOOT * scale;
+  const fontSize = 11 / scale;
+  const padX = 5 / scale;
+  const padY = 3 / scale;
 
   return (
     <>
@@ -31,30 +34,41 @@ export function LabelLayer({ scale, offsetX, offsetY }: Props) {
           } else if (obj.geometry === "line" && obj.points.length >= 2) {
             const len = polylineLength(obj.points);
             labelText = `${len.toFixed(1)} ft`;
-            // Place label at midpoint of first segment
             const mid = Math.floor(obj.points.length / 2);
             cx = ((obj.points[mid][0] + obj.position.x) * pxScale + offsetX);
-            cy = ((obj.points[mid][1] + obj.position.y) * pxScale + offsetY) - 12;
+            cy = ((obj.points[mid][1] + obj.position.y) * pxScale + offsetY) - 14 / scale;
           } else if (obj.geometry === "point" && obj.points.length > 0) {
             const r = obj.radius ?? (obj.properties.radius as number) ?? 3;
             labelText = `${(r * 2).toFixed(0)} ft`;
             cx = (obj.points[0][0] + obj.position.x) * pxScale + offsetX;
-            cy = (obj.points[0][1] + obj.position.y) * pxScale + offsetY + r * pxScale + 4;
+            cy = (obj.points[0][1] + obj.position.y) * pxScale + offsetY + r * pxScale + 6 / scale;
           }
 
           if (!labelText) return null;
 
+          const textWidth = labelText.length * 5.5;
+          const bgWidth = textWidth + padX * 2 * scale;
+          const bgHeight = fontSize * scale + padY * 2 * scale;
+
           return (
-            <Text
-              key={obj.id}
-              x={cx}
-              y={cy}
-              text={labelText}
-              fill="rgba(255,255,255,0.7)"
-              fontSize={10}
-              fontFamily="Inter, sans-serif"
-              offsetX={labelText.length * 3}
-            />
+            <Group key={obj.id} x={cx} y={cy}>
+              <Rect
+                x={-bgWidth / 2}
+                y={-bgHeight / 2}
+                width={bgWidth}
+                height={bgHeight}
+                fill="rgba(0,0,0,0.6)"
+                cornerRadius={3}
+              />
+              <Text
+                text={labelText}
+                fill="rgba(255,255,255,0.85)"
+                fontSize={fontSize * scale}
+                fontFamily="Inter, sans-serif"
+                offsetX={textWidth / 2}
+                offsetY={(fontSize * scale) / 2}
+              />
+            </Group>
           );
         })}
     </>

@@ -10,10 +10,11 @@ interface Props {
   offsetX: number;
   offsetY: number;
   selected: boolean;
+  hovered?: boolean;
   onSelect: () => void;
 }
 
-export function HouseShape({ obj, scale, offsetX, offsetY, selected, onSelect }: Props) {
+export function HouseShape({ obj, scale, offsetX, offsetY, selected, hovered, onSelect }: Props) {
   const pxScale = PIXELS_PER_FOOT * scale;
   const pattern = usePattern(obj.type);
   const shadow = getShadowProps(obj.type);

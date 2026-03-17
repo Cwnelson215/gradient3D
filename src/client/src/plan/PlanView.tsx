@@ -39,6 +39,7 @@ import { PIXELS_PER_FOOT, canvasToWorld } from "../utils/coordinates";
 import { mergeWithOverlapping } from "../utils/polygonMerge";
 import { objectRegistry, toolToObjectType } from "../types/objectRegistry";
 import { computeSnapGuides, applySnap, type SnapGuide } from "./tools/SnapGuides";
+import { colors, font } from "../ui/theme";
 import type Konva from "konva";
 
 export function PlanView() {
@@ -49,6 +50,7 @@ export function PlanView() {
   const updateObject = useLandscapeStore((s) => s.updateObject);
   const removeObject = useLandscapeStore((s) => s.removeObject);
   const objects = useLandscapeStore((s) => s.project?.objects ?? []);
+  const setHoveredObjectId = useLandscapeStore((s) => s.setHoveredObjectId);
 
   // View state from store
   const viewScale = useLandscapeStore((s) => s.viewScale);
@@ -295,6 +297,12 @@ export function PlanView() {
       return;
     }
 
+    // Hover hit-testing in select mode
+    if (activeTool === "select" && !dragState && !isPanning) {
+      const id = hitTest(e, objects, offset.x, offset.y, viewScale);
+      setHoveredObjectId(id);
+    }
+
     if (activeTool === "measure") {
       setMeasureState(handleMeasureMouseMove(e, measureState, offset.x, offset.y, viewScale, property.gridSpacingFt));
       return;
@@ -336,12 +344,22 @@ export function PlanView() {
 
   const handleMouseLeave = () => {
     setCursorWorldPos(null);
+    setHoveredObjectId(null);
   };
 
   const isDrawing = geometryMode !== null || activeTool === "measure" || activeTool === "drawAnnotation";
+  const hoveredId = useLandscapeStore.getState().hoveredObjectId;
+  const hoveredObj = hoveredId ? objects.find((o) => o.id === hoveredId) : null;
+  const canDrag = hoveredObj && !hoveredObj.locked && activeTool === "select";
 
   return (
-    <div ref={measuredRef} style={{ width: "100%", height: "calc(100% - 28px)", background: "#0f0f14" }}>
+    <div ref={measuredRef} style={{ width: "100%", height: "calc(100% - 28px)", background: "#0f0f14", position: "relative" }}>
+      {/* Empty state */}
+      {objects.length === 0 && (
+        <div style={emptyState}>
+          Click a tool above to start designing
+        </div>
+      )}
       <Stage
         ref={stageRef}
         width={dims.w}
@@ -357,9 +375,11 @@ export function PlanView() {
           cursor:
             activeTool === "pan"
               ? "grab"
-              : isDrawing
-                ? "crosshair"
-                : "default",
+              : canDrag
+                ? "move"
+                : isDrawing
+                  ? "crosshair"
+                  : "default",
         }}
       >
         <Layer>
@@ -397,3 +417,16 @@ export function PlanView() {
     </div>
   );
 }
+
+const emptyState: React.CSSProperties = {
+  position: "absolute",
+  top: "50%",
+  left: "50%",
+  transform: "translate(-50%, -50%)",
+  color: colors.textMuted,
+  fontSize: font.size.lg,
+  fontFamily: font.family,
+  pointerEvents: "none",
+  opacity: 0.5,
+  zIndex: 1,
+};

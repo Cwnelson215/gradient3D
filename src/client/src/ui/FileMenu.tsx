@@ -1,12 +1,14 @@
 import { useRef } from "react";
 import { useLandscapeStore } from "../store/landscapeStore";
 import type { ProjectState } from "../types/landscape";
-import { colors, font, spacing, radius, transition } from "./theme";
+import { useToast } from "./Toast";
 import { FileIcon, DownloadIcon, FolderOpenIcon } from "./icons";
+import { Tooltip } from "./Tooltip";
 
-export function FileMenu() {
+export function FileMenuButtons() {
   const project = useLandscapeStore((s) => s.project);
   const loadProject = useLandscapeStore((s) => s.loadProject);
+  const showToast = useToast((s) => s.showToast);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleExport = () => {
@@ -19,6 +21,7 @@ export function FileMenu() {
     a.download = "landscape.gradient.json";
     a.click();
     URL.revokeObjectURL(url);
+    showToast("Project saved", "success");
   };
 
   const handleImport = () => {
@@ -34,9 +37,10 @@ export function FileMenu() {
         const data = JSON.parse(reader.result as string) as ProjectState;
         if (data.property && data.objects) {
           loadProject(data);
+          showToast("Project loaded", "success");
         }
       } catch {
-        // invalid file
+        showToast("Invalid project file", "error");
       }
     };
     reader.readAsText(file);
@@ -48,19 +52,22 @@ export function FileMenu() {
   };
 
   return (
-    <div style={container}>
-      <button onClick={handleNew} style={btn} title="New Project">
-        <FileIcon size={13} />
-        New
-      </button>
-      <button onClick={handleExport} style={btn} title="Export Project JSON">
-        <DownloadIcon size={13} />
-        Save
-      </button>
-      <button onClick={handleImport} style={btn} title="Import Project JSON">
-        <FolderOpenIcon size={13} />
-        Open
-      </button>
+    <>
+      <Tooltip content="New Project">
+        <button onClick={handleNew} style={iconBtn}>
+          <FileIcon size={15} />
+        </button>
+      </Tooltip>
+      <Tooltip content="Save Project">
+        <button onClick={handleExport} style={iconBtn}>
+          <DownloadIcon size={15} />
+        </button>
+      </Tooltip>
+      <Tooltip content="Open Project">
+        <button onClick={handleImport} style={iconBtn}>
+          <FolderOpenIcon size={15} />
+        </button>
+      </Tooltip>
       <input
         ref={fileInputRef}
         type="file"
@@ -68,33 +75,19 @@ export function FileMenu() {
         onChange={handleFileChange}
         style={{ display: "none" }}
       />
-    </div>
+    </>
   );
 }
 
-const container: React.CSSProperties = {
-  position: "absolute",
-  top: 8,
-  left: 8,
-  display: "flex",
-  gap: spacing.sm,
-  zIndex: 100,
-  pointerEvents: "auto",
-};
-
-const btn: React.CSSProperties = {
-  padding: `${spacing.sm + 2}px ${spacing.lg}px`,
-  border: `1px solid ${colors.border}`,
-  borderRadius: radius.sm,
+const iconBtn: React.CSSProperties = {
+  background: "none",
+  border: "none",
   cursor: "pointer",
-  fontFamily: font.family,
-  fontSize: font.size.sm,
-  fontWeight: font.weight.medium,
-  background: colors.surface,
-  color: colors.textMuted,
+  padding: 6,
+  borderRadius: 4,
   display: "flex",
   alignItems: "center",
-  gap: spacing.sm + 1,
-  transition,
-  lineHeight: 1,
+  justifyContent: "center",
+  color: "#8888a0",
+  transition: "all 0.15s ease",
 };
