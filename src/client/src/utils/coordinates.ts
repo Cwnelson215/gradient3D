@@ -9,10 +9,10 @@ export interface GridLevel {
 
 /** @deprecated Use getGridLevels(gridSpacingFt) instead */
 export const FINE_GRID_LEVELS: GridLevel[] = [
-  { spacingFt: 5,      label: "5 ft",   stroke: "#2e2e2e", strokeWidth: 0.4  },
-  { spacingFt: 1,      label: "1 ft",   stroke: "#262626", strokeWidth: 0.3  },
-  { spacingFt: 1 / 2,  label: "6 in",   stroke: "#222",    strokeWidth: 0.25 },
-  { spacingFt: 1 / 12, label: "1 in",   stroke: "#1e1e1e", strokeWidth: 0.2  },
+  { spacingFt: 5,      label: "5 ft",   stroke: "#888",    strokeWidth: 0.4  },
+  { spacingFt: 1,      label: "1 ft",   stroke: "#757575", strokeWidth: 0.3  },
+  { spacingFt: 1 / 2,  label: "6 in",   stroke: "#636363", strokeWidth: 0.25 },
+  { spacingFt: 1 / 12, label: "1 in",   stroke: "#525252", strokeWidth: 0.2  },
 ];
 
 const NICE_VALUES: { spacingFt: number; label: string }[] = [
@@ -31,13 +31,13 @@ const NICE_VALUES: { spacingFt: number; label: string }[] = [
 
 // Styling gradient: index 0 = coarsest visible fine level (most prominent)
 const STYLE_GRADIENT: { stroke: string; strokeWidth: number }[] = [
-  { stroke: "#2e2e2e", strokeWidth: 0.4  },
-  { stroke: "#2a2a2a", strokeWidth: 0.35 },
-  { stroke: "#262626", strokeWidth: 0.3  },
-  { stroke: "#242424", strokeWidth: 0.28 },
-  { stroke: "#222",    strokeWidth: 0.25 },
-  { stroke: "#202020", strokeWidth: 0.22 },
-  { stroke: "#1e1e1e", strokeWidth: 0.2  },
+  { stroke: "#888", strokeWidth: 0.4  },
+  { stroke: "#7e7e7e", strokeWidth: 0.35 },
+  { stroke: "#757575", strokeWidth: 0.3  },
+  { stroke: "#6c6c6c", strokeWidth: 0.28 },
+  { stroke: "#636363", strokeWidth: 0.25 },
+  { stroke: "#5a5a5a", strokeWidth: 0.22 },
+  { stroke: "#525252", strokeWidth: 0.2  },
 ];
 
 export function getGridLevels(gridSpacingFt: number): GridLevel[] {

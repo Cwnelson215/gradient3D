@@ -60,7 +60,7 @@ export function GridLayer({
       <Line
         key={`v${x}`}
         points={[px, offsetY, px, offsetY + h]}
-        stroke="#333"
+        stroke="#999"
         strokeWidth={0.5}
       />
     );
@@ -71,7 +71,7 @@ export function GridLayer({
       <Line
         key={`h${y}`}
         points={[offsetX, py, offsetX + w, py]}
-        stroke="#333"
+        stroke="#999"
         strokeWidth={0.5}
       />
     );
@@ -153,7 +153,7 @@ export function GridLayer({
           offsetX, offsetY + h,
         ]}
         closed
-        stroke="#555"
+        stroke="#bbb"
         strokeWidth={1}
       />
     </>
