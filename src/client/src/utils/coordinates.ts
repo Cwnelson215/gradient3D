@@ -29,8 +29,10 @@ const NICE_VALUES: { spacingFt: number; label: string }[] = [
   { spacingFt: 1 / 12, label: "1 in"   },
 ];
 
+import type { Theme } from "../ui/theme";
+
 // Styling gradient: index 0 = coarsest visible fine level (most prominent)
-const STYLE_GRADIENT: { stroke: string; strokeWidth: number }[] = [
+const DARK_STYLE_GRADIENT: { stroke: string; strokeWidth: number }[] = [
   { stroke: "#888", strokeWidth: 0.4  },
   { stroke: "#7e7e7e", strokeWidth: 0.35 },
   { stroke: "#757575", strokeWidth: 0.3  },
@@ -40,7 +42,17 @@ const STYLE_GRADIENT: { stroke: string; strokeWidth: number }[] = [
   { stroke: "#525252", strokeWidth: 0.2  },
 ];
 
-export function getGridLevels(gridSpacingFt: number): GridLevel[] {
+const LIGHT_STYLE_GRADIENT: { stroke: string; strokeWidth: number }[] = [
+  { stroke: "#999", strokeWidth: 0.4  },
+  { stroke: "#a0a0a0", strokeWidth: 0.35 },
+  { stroke: "#aaa", strokeWidth: 0.3  },
+  { stroke: "#b2b2b2", strokeWidth: 0.28 },
+  { stroke: "#bbb", strokeWidth: 0.25 },
+  { stroke: "#c4c4c4", strokeWidth: 0.22 },
+  { stroke: "#ccc", strokeWidth: 0.2  },
+];
+
+export function getGridLevels(gridSpacingFt: number, theme: Theme = "dark"): GridLevel[] {
   // Build a clean subdivision chain: each level must evenly divide the one above it.
   // This prevents overlapping patterns (e.g., 50 and 20 both visible under a 100 grid).
   const chain: { spacingFt: number; label: string }[] = [];
@@ -53,11 +65,12 @@ export function getGridLevels(gridSpacingFt: number): GridLevel[] {
       parent = v.spacingFt;
     }
   }
+  const gradient = theme === "light" ? LIGHT_STYLE_GRADIENT : DARK_STYLE_GRADIENT;
   return chain.map((v, i) => ({
     spacingFt: v.spacingFt,
     label: v.label,
-    stroke: STYLE_GRADIENT[Math.min(i, STYLE_GRADIENT.length - 1)].stroke,
-    strokeWidth: STYLE_GRADIENT[Math.min(i, STYLE_GRADIENT.length - 1)].strokeWidth,
+    stroke: gradient[Math.min(i, gradient.length - 1)].stroke,
+    strokeWidth: gradient[Math.min(i, gradient.length - 1)].strokeWidth,
   }));
 }
 

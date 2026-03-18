@@ -1,6 +1,8 @@
 import type React from "react";
 
-export const colors = {
+export type Theme = "dark" | "light";
+
+export const darkColors = {
   bg: "#0f0f14",
   surface: "#1a1a24",
   surfaceFloating: "#1e1e2e",
@@ -16,7 +18,71 @@ export const colors = {
   dangerHover: "#c03030",
   success: "#34d399",
   warning: "#fbbf24",
+  // Canvas-only colors (not CSS vars)
+  gridMajor: "#999",
+  gridPropertyOutline: "#bbb",
 };
+
+export const lightColors = {
+  bg: "#e8e8ec",
+  surface: "#f0f0f4",
+  surfaceFloating: "#f4f4f8",
+  surfaceHover: "#e0e0e5",
+  border: "#b0b0bc",
+  borderFocus: "#2a7de0",
+  text: "#0f0f1a",
+  textMuted: "#4a4a60",
+  accent: "#2a7de0",
+  accentHover: "#1a6dd0",
+  accentSubtle: "rgba(42, 125, 224, 0.18)",
+  danger: "#c03030",
+  dangerHover: "#a02020",
+  success: "#1a9a6e",
+  warning: "#c08a00",
+  // Canvas-only colors (not CSS vars)
+  gridMajor: "#999",
+  gridPropertyOutline: "#666",
+};
+
+// CSS variable references — work in all React inline styles.
+// Actual values are set by applyTheme() on :root.
+export const colors = {
+  bg: "var(--color-bg)",
+  surface: "var(--color-surface)",
+  surfaceFloating: "var(--color-surfaceFloating)",
+  surfaceHover: "var(--color-surfaceHover)",
+  border: "var(--color-border)",
+  borderFocus: "var(--color-borderFocus)",
+  text: "var(--color-text)",
+  textMuted: "var(--color-textMuted)",
+  accent: "var(--color-accent)",
+  accentHover: "var(--color-accentHover)",
+  accentSubtle: "var(--color-accentSubtle)",
+  danger: "var(--color-danger)",
+  dangerHover: "var(--color-dangerHover)",
+  success: "var(--color-success)",
+  warning: "var(--color-warning)",
+};
+
+const palettes = { dark: darkColors, light: lightColors };
+
+/** Sets CSS custom properties on :root for the given theme */
+export function applyTheme(theme: Theme): void {
+  const palette = palettes[theme];
+  const root = document.documentElement;
+  root.setAttribute("data-theme", theme);
+
+  // Set CSS variables for every color (except canvas-only ones)
+  const cssVarKeys = Object.keys(colors) as (keyof typeof colors)[];
+  for (const key of cssVarKeys) {
+    root.style.setProperty(`--color-${key}`, palette[key]);
+  }
+}
+
+/** Returns actual hex color values for the given theme (for Konva canvas rendering) */
+export function getCanvasColors(theme: Theme) {
+  return palettes[theme];
+}
 
 export const zIndex = {
   hud: 100,

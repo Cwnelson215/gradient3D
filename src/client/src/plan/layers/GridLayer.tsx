@@ -1,6 +1,8 @@
 import { Line, Image as KonvaImage } from "react-konva";
 import { useEffect, useState } from "react";
 import { PIXELS_PER_FOOT, getGridLevels, MIN_PIXEL_THRESHOLD } from "../../utils/coordinates";
+import { useLandscapeStore } from "../../store/landscapeStore";
+import { getCanvasColors } from "../../ui/theme";
 
 interface Props {
   widthFt: number;
@@ -30,6 +32,8 @@ export function GridLayer({
   stageWidth = 2000,
   stageHeight = 2000,
 }: Props) {
+  const theme = useLandscapeStore((s) => s.theme);
+  const canvasColors = getCanvasColors(theme);
   const [img, setImg] = useState<HTMLImageElement | null>(null);
   const pxScale = PIXELS_PER_FOOT * scale;
   const w = widthFt * pxScale;
@@ -60,7 +64,7 @@ export function GridLayer({
       <Line
         key={`v${x}`}
         points={[px, offsetY, px, offsetY + h]}
-        stroke="#999"
+        stroke={canvasColors.gridMajor}
         strokeWidth={0.5}
       />
     );
@@ -71,14 +75,14 @@ export function GridLayer({
       <Line
         key={`h${y}`}
         points={[offsetX, py, offsetX + w, py]}
-        stroke="#999"
+        stroke={canvasColors.gridMajor}
         strokeWidth={0.5}
       />
     );
   }
 
   // Progressive fine grid levels (adaptive to major grid spacing)
-  const gridLevels = getGridLevels(gridSpacingFt);
+  const gridLevels = getGridLevels(gridSpacingFt, theme);
   const visibleLevels = gridLevels.filter(
     (level) => level.spacingFt * pxScale >= MIN_PIXEL_THRESHOLD
   );
@@ -153,7 +157,7 @@ export function GridLayer({
           offsetX, offsetY + h,
         ]}
         closed
-        stroke="#bbb"
+        stroke={canvasColors.gridPropertyOutline}
         strokeWidth={1}
       />
     </>

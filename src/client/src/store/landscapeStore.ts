@@ -12,6 +12,7 @@ import type {
   ObjectStyle,
 } from "../types/landscape";
 import { objectRegistry } from "../types/objectRegistry";
+import { applyTheme, type Theme } from "../ui/theme";
 
 const MAX_UNDO = 50;
 
@@ -28,6 +29,10 @@ interface LandscapeStore {
 
   // Clipboard (not persisted)
   clipboard: LandscapeObject | null;
+
+  // Theme
+  theme: Theme;
+  toggleTheme: () => void;
 
   // View state (shared across components)
   viewScale: number;
@@ -78,6 +83,9 @@ function snapshot(state: LandscapeStore): void {
   state.redoStack = [];
 }
 
+// Apply default dark theme immediately (before rehydration) to prevent flash
+applyTheme("dark");
+
 export const useLandscapeStore = create<LandscapeStore>()(
   persist(
     (set, get) => ({
@@ -89,6 +97,12 @@ export const useLandscapeStore = create<LandscapeStore>()(
       undoStack: [],
       redoStack: [],
       clipboard: null,
+      theme: "dark" as Theme,
+      toggleTheme: () => {
+        const next = get().theme === "dark" ? "light" : "dark";
+        applyTheme(next);
+        set({ theme: next });
+      },
       viewScale: 1,
       viewOffset: { x: 40, y: 40 },
       cursorWorldPos: null,
@@ -297,7 +311,10 @@ export const useLandscapeStore = create<LandscapeStore>()(
     }),
     {
       name: "gradient-project",
-      partialize: (state) => ({ project: state.project }),
+      partialize: (state) => ({ project: state.project, theme: state.theme }),
+      onRehydrateStorage: () => (state) => {
+        if (state) applyTheme(state.theme);
+      },
     }
   )
 );

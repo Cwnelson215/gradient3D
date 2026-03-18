@@ -49,7 +49,7 @@ export function generatePrintLayout(
   layer.scale({ x: resolution, y: resolution });
 
   // Background
-  const bgColor = options.background === "white" ? "#ffffff" : "#0f0f14";
+  const bgColor = options.background === "white" ? "#ffffff" : "#1a1a24";
   const textColor = options.background === "white" ? "#333333" : "#e0e0e8";
   const mutedColor = options.background === "white" ? "#888888" : "#8888a0";
   const borderColor = options.background === "white" ? "#cccccc" : "#2a2a3a";

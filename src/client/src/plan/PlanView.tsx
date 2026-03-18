@@ -353,7 +353,7 @@ export function PlanView() {
   const canDrag = hoveredObj && !hoveredObj.locked && activeTool === "select";
 
   return (
-    <div ref={measuredRef} style={{ width: "100%", height: "calc(100% - 28px)", background: "#0f0f14", position: "relative" }}>
+    <div ref={measuredRef} style={{ width: "100%", height: "calc(100% - 28px)", background: colors.bg, position: "relative" }}>
       {/* Empty state */}
       {objects.length === 0 && (
         <div style={emptyState}>

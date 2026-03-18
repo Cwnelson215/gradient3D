@@ -10,7 +10,7 @@ import { StatusBar } from "./StatusBar";
 import { ExportModal } from "./ExportModal";
 import { ToastContainer } from "./Toast";
 import { colors, panelStyle, spacing, zIndex } from "./theme";
-import { UndoIcon, RedoIcon, LayersIcon } from "./icons";
+import { UndoIcon, RedoIcon, LayersIcon, SunIcon, MoonIcon } from "./icons";
 import { Tooltip } from "./Tooltip";
 
 function UndoRedoButtons() {
@@ -40,6 +40,19 @@ function UndoRedoButtons() {
         </button>
       </Tooltip>
     </>
+  );
+}
+
+function ThemeToggle() {
+  const theme = useLandscapeStore((s) => s.theme);
+  const toggleTheme = useLandscapeStore((s) => s.toggleTheme);
+
+  return (
+    <Tooltip content={theme === "dark" ? "Light mode" : "Dark mode"}>
+      <button onClick={toggleTheme} style={iconBtn}>
+        {theme === "dark" ? <SunIcon size={15} /> : <MoonIcon size={15} />}
+      </button>
+    </Tooltip>
   );
 }
 
@@ -85,9 +98,11 @@ export function HUD() {
           <PlanToolbar />
         </div>
 
-        {/* Right pill: Export + Help */}
+        {/* Right pill: Export + Theme + Help */}
         <div style={pill}>
           <ExportButton onExportClick={() => setExportModalOpen(true)} />
+          <div style={pillSep} />
+          <ThemeToggle />
           <div style={pillSep} />
           <HotkeyButton open={hotkeyOpen} onToggle={() => setHotkeyOpen(!hotkeyOpen)} />
         </div>
